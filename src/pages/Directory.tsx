@@ -30,6 +30,7 @@ type EmployeeRecord = Employee & {
   emailPassword?: string;
   siteId?: string;
   rustdeskId?: string;
+  isArchived?: boolean;
 };
 
 type AddEmployeeForm = {
@@ -52,6 +53,7 @@ type AddEmployeeForm = {
   biosDate: string;
   activityWatchStatus: 'installed' | 'missing';
   windowsKey: string;
+  isArchived?: boolean;
 };
 
 const initialForm: AddEmployeeForm = {
@@ -74,6 +76,7 @@ const initialForm: AddEmployeeForm = {
   biosDate: '',
   activityWatchStatus: 'missing',
   windowsKey: '',
+  isArchived: false,
 };
 
 function titleEsetStatus(value?: string) {
@@ -117,6 +120,7 @@ function normalizeEmployee(emp: any): EmployeeRecord | null {
     activityWatchStatus: titleActivityWatchStatus(emp.activityWatchStatus || emp.activitywatch) as Employee['activityWatchStatus'],
     updatedAt: emp.updatedAt || '',
     updatedBy: emp.updatedBy || '',
+    isArchived: emp.isArchived || false,
   };
 }
 
@@ -190,19 +194,21 @@ export default function Directory() {
     [employees, sites]
   );
 
-  const filteredEmployees = employees.filter((emp) => {
-    const search = searchTerm.toLowerCase();
-    const matchesSearch =
-      emp.fullName.toLowerCase().includes(search) ||
-      emp.employeeId.toLowerCase().includes(search) ||
-      emp.pcName.toLowerCase().includes(search) ||
-      emp.accountAssignment.toLowerCase().includes(search);
+  const filteredEmployees = employees
+    .filter((emp) => !emp.isArchived)
+    .filter((emp) => {
+      const search = searchTerm.toLowerCase();
+      const matchesSearch =
+        emp.fullName.toLowerCase().includes(search) ||
+        emp.employeeId.toLowerCase().includes(search) ||
+        emp.pcName.toLowerCase().includes(search) ||
+        emp.accountAssignment.toLowerCase().includes(search);
 
-    const matchesSite = siteFilter === 'All' || emp.site === siteFilter;
-    const matchesStatus = statusFilter === 'All' || emp.status === statusFilter.toLowerCase();
+      const matchesSite = siteFilter === 'All' || emp.site === siteFilter;
+      const matchesStatus = statusFilter === 'All' || emp.status === statusFilter.toLowerCase();
 
-    return matchesSearch && matchesSite && matchesStatus;
-  });
+      return matchesSearch && matchesSite && matchesStatus;
+    });
 
   const updateForm = (field: keyof AddEmployeeForm, value: string) => {
     setForm((current) => ({ ...current, [field]: value }));
