@@ -24,25 +24,6 @@ const trackedFields = [
   'isArchived',
 ];
 
-const systemUser = {
-  id: 'system',
-  email: 'System',
-  fullName: 'System',
-  role: 'system',
-  roles: ['super_admin'],
-};
-
-function auditActor(user) {
-  const actor = user || systemUser;
-
-  return {
-    userId: actor.id,
-    userEmail: actor.email || 'System',
-    userName: actor.fullName || actor.email || 'System',
-    userRole: actor.role || actor.roles?.[0] || 'system',
-  };
-}
-
 function comparable(value) {
   if (value === undefined || value === null) return '';
   if (value instanceof Date) return value.toISOString().slice(0, 10);
