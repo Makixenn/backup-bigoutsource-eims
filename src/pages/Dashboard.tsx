@@ -38,20 +38,34 @@ const SITE_COLORS: Record<string, string> = {
   'Hybrid': '#F59E0B',
 };
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label, chartType }: any) => {
   if (active && payload && payload.length) {
+    const entry = payload[0];
+    const dataName = entry.payload?.name || label || 'Total';
+    let title = '';
+    let valueLabel = 'Employees';
+
+    if (chartType === 'growth') {
+      title = `Month: ${dataName}`;
+      valueLabel = 'Total Employees';
+    } else if (chartType === 'department') {
+      title = `Department: ${dataName}`;
+      valueLabel = 'Assigned Personnel';
+    } else if (chartType === 'site') {
+      title = `Office / Site: ${dataName}`;
+      valueLabel = 'Total Count';
+    } else {
+      title = `${dataName}`;
+    }
+
     return (
-      <div className="bg-white px-3 py-2 border border-[#E5E7EB] rounded-xl shadow-lg shadow-[#11182714]">
-        {payload.map((entry: any, index: number) => {
-          const displayLabel = entry.name === 'count' ? (entry.payload.name || label || 'Total') : entry.name;
-          return (
-            <div key={index} className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color || entry.payload.fill || '#111827' }} />
-              <span className="text-xs font-bold text-[#4B5563]">{displayLabel}:</span>
-              <span className="text-xs font-black text-[#111827]">{entry.value}</span>
-            </div>
-          );
-        })}
+      <div className="bg-white p-3 border border-[#E5E7EB] rounded-xl shadow-lg shadow-[#11182714] min-w-[140px]">
+        <p className="text-[10px] font-black uppercase tracking-widest text-[#9CA3AF] mb-2 border-b border-[#F3F4F6] pb-2">{title}</p>
+        <div className="flex items-center gap-2">
+          <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: entry.color || entry.payload.fill || '#111827' }} />
+          <span className="text-xs font-bold text-[#4B5563]">{valueLabel}:</span>
+          <span className="text-sm font-black text-[#111827]">{entry.value}</span>
+        </div>
       </div>
     );
   }
@@ -62,7 +76,7 @@ export default function Dashboard() {
   const [employees, setEmployees] = useState<any[]>([]);
   const [devices, setDevices] = useState<any[]>([]);
   const [logs, setLogs] = useState<any[]>([]);
-  
+
   const [employeesLoading, setEmployeesLoading] = useState(true);
   const [devicesLoading, setDevicesLoading] = useState(true);
   const [logsLoading, setLogsLoading] = useState(true);
@@ -79,7 +93,7 @@ export default function Dashboard() {
         if (isMounted) setEmployeesLoading(false);
       }
     }
-    
+
     async function loadDevices() {
       try {
         const result = await deviceService.list();
@@ -89,7 +103,7 @@ export default function Dashboard() {
         if (isMounted) setDevicesLoading(false);
       }
     }
-    
+
     async function loadLogs() {
       try {
         const result = await auditLogService.list({ limit: 8 });
@@ -149,7 +163,7 @@ export default function Dashboard() {
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
-      
+
     if (dist.length === 0) {
       dist = [
         { name: 'Engineering', count: 42 },
@@ -167,7 +181,7 @@ export default function Dashboard() {
     const sortedEmployees = [...employees]
       .filter(e => e.joinedAt)
       .sort((a, b) => new Date(a.joinedAt).getTime() - new Date(b.joinedAt).getTime());
-    
+
     let cumulative = 0;
     sortedEmployees.forEach(emp => {
       const date = new Date(emp.joinedAt);
@@ -175,7 +189,7 @@ export default function Dashboard() {
       cumulative++;
       months.set(monthYear, cumulative);
     });
-    
+
     let trend = Array.from(months.entries()).map(([month, count]) => ({ month, name: month, count })).slice(-6);
     if (trend.length === 0) {
       trend = [
@@ -200,7 +214,7 @@ export default function Dashboard() {
       }
     });
     let dist = Array.from(counts.entries()).map(([site, count]) => ({ site, name: site, count }));
-    
+
     const ORDER = ['San Pablo City (HQ)', 'Candelaria', 'WFH', 'Hybrid'];
     dist.sort((a, b) => {
       let indexA = ORDER.indexOf(a.site);
@@ -309,7 +323,7 @@ export default function Dashboard() {
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
                         <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280', fontWeight: 'bold' }} dy={10} />
                         <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280', fontWeight: 'bold' }} />
-                        <RechartsTooltip content={<CustomTooltip />} cursor={{ stroke: '#E5E7EB', strokeWidth: 2 }} />
+                        <RechartsTooltip content={<CustomTooltip chartType="growth" />} cursor={{ stroke: '#E5E7EB', strokeWidth: 2 }} />
                         <Line type="monotone" dataKey="count" stroke="#6366F1" strokeWidth={3} dot={{ r: 4, fill: '#6366F1', strokeWidth: 2, stroke: '#ffffff' }} activeDot={{ r: 6 }} />
                       </LineChart>
                     </ResponsiveContainer>
@@ -341,7 +355,7 @@ export default function Dashboard() {
                         <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#E5E7EB" />
                         <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280', fontWeight: 'bold' }} />
                         <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#111827', fontWeight: 'bold' }} width={90} />
-                        <RechartsTooltip content={<CustomTooltip />} cursor={{ fill: '#F9FAFB' }} />
+                        <RechartsTooltip content={<CustomTooltip chartType="department" />} cursor={{ fill: '#F9FAFB' }} />
                         <Bar dataKey="count" fill="#3B82F6" radius={[0, 4, 4, 0]} barSize={24} />
                       </BarChart>
                     </ResponsiveContainer>
@@ -388,7 +402,7 @@ export default function Dashboard() {
                               <Cell key={`cell-${index}`} fill={SITE_COLORS[entry.site] || COLORS[index % COLORS.length]} />
                             ))}
                           </Pie>
-                          <RechartsTooltip content={<CustomTooltip />} wrapperStyle={{ zIndex: 100 }} />
+                          <RechartsTooltip content={<CustomTooltip chartType="site" />} wrapperStyle={{ zIndex: 100 }} />
                         </PieChart>
                       </ResponsiveContainer>
                       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10">
@@ -448,10 +462,10 @@ export default function Dashboard() {
                       </div>
                     ))
                   ) : (
-                     <div className="h-full flex flex-col items-center justify-center text-center p-6 text-[#9CA3AF]">
-                        <Users className="w-8 h-8 mb-3 opacity-20" />
-                        <p className="text-sm font-bold">No recent hires in the last 30 days.</p>
-                     </div>
+                    <div className="h-full flex flex-col items-center justify-center text-center p-6 text-[#9CA3AF]">
+                      <Users className="w-8 h-8 mb-3 opacity-20" />
+                      <p className="text-sm font-bold">No recent hires in the last 30 days.</p>
+                    </div>
                   )}
                 </div>
               </motion.div>

@@ -636,33 +636,6 @@ export default function Directory() {
     });
   };
 
-  const exportToExcel = () => {
-    const rows = filteredEmployees.map((emp) => ({
-      ID: emp.employeeId,
-      Name: emp.fullName,
-      Account: emp.accountAssignment,
-      'Phone Number': emp.phone,
-      Address: emp.address,
-      'Bigoutsource Email': emp.boEmail,
-      Password: emp.emailPassword,
-      'LMS Account': emp.lmsAccount,
-      Status: emp.status,
-      Site: emp.site,
-      'PC Name': emp.pcName,
-      'RustDesk ID': emp.rustDeskId,
-      'Remote ID': emp.remoteId,
-      ESET: emp.esetStatus,
-      'BIOS Date': emp.biosDate,
-      ActivityWatch: emp.activityWatchStatus,
-      'Windows License Key': emp.windowsKey,
-    }));
-    const ws = XLSX.utils.json_to_sheet(rows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Employees');
-    XLSX.writeFile(wb, 'Nexus_Employees_Export.xlsx');
-    toast.success('Excel exported successfully');
-  };
-
   const handleImport = () => {
     fileInputRef.current?.click();
   };
@@ -975,13 +948,7 @@ export default function Directory() {
                     {isStagingImport ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                     {isStagingImport ? 'Staging' : 'Import'}
                   </button>
-                  <button
-                    onClick={exportToExcel}
-                    className="flex items-center gap-1.5 whitespace-nowrap px-3 py-2.5 border border-[#E5E7EB] bg-white rounded-xl text-sm font-bold text-[#4B5563] hover:text-[#111827] transition-all"
-                  >
-                    <Upload className="w-4 h-4" />
-                    Export
-                  </button>
+
                   <button
                     onClick={() => setIsModalOpen(true)}
                     className="flex items-center gap-1.5 whitespace-nowrap px-4 py-2.5 bg-[#111827] text-white rounded-xl text-sm font-black hover:bg-[#374151] transition-all shadow-lg shadow-[#11182720]"
@@ -1260,8 +1227,9 @@ export default function Directory() {
                                 <span className="truncate">{form.accountAssignment || 'Select account type'}</span>
                                 <ChevronRight className={cn('h-4 w-4 shrink-0 transition-transform', isAccountDropdownOpen && 'rotate-90')} />
                               </button>
-                              {isAccountDropdownOpen && (
-                                <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-20 overflow-hidden rounded-xl border border-[#E5E7EB] bg-white shadow-xl shadow-[#11182714]">
+                              <AnimatePresence>
+{isAccountDropdownOpen && (
+                                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.15 }} className="absolute left-0 right-0 top-[calc(100%+8px)] z-20 overflow-hidden rounded-xl border border-[#E5E7EB] bg-white shadow-xl shadow-[#11182714]">
                                   {accounts.length ? (
                                     <div className="max-h-64 overflow-y-auto">
                                       <AccountDropdownGroup title="Internal" accounts={internalAccounts} onSelect={selectAccount} />
@@ -1270,8 +1238,9 @@ export default function Directory() {
                                   ) : (
                                     <div className="px-3 py-3 text-xs font-bold text-[#6B7280]">No departments yet</div>
                                   )}
-                                </div>
+                                </motion.div>
                               )}
+                              </AnimatePresence>
                             </div>
                           </Field>
                           <Field label="Password">
@@ -1327,8 +1296,9 @@ export default function Directory() {
                                 />
                               </button>
 
-                              {isSiteDropdownOpen && (
-                                <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-20 overflow-hidden rounded-xl border border-[#E5E7EB] bg-white shadow-xl shadow-[#11182714]">
+                              <AnimatePresence>
+{isSiteDropdownOpen && (
+                                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.15 }} className="absolute left-0 right-0 top-[calc(100%+8px)] z-20 overflow-hidden rounded-xl border border-[#E5E7EB] bg-white shadow-xl shadow-[#11182714]">
                                   <div className="max-h-64 overflow-y-auto">
                                     {sites.map((site) => (
                                       <button
@@ -1345,8 +1315,9 @@ export default function Directory() {
                                       </button>
                                     ))}
                                   </div>
-                                </div>
+                                </motion.div>
                               )}
+                              </AnimatePresence>
                             </div>
                           </Field>
                           <Field label="Status">
@@ -1670,8 +1641,9 @@ function FilterDropdown({
         <span className="truncate">{options.find((o) => o.value === value)?.label || placeholder || value}</span>
         <ChevronRight className={cn('h-4 w-4 shrink-0 transition-transform', isOpen && 'rotate-90')} />
       </button>
-      {isOpen && (
-        <div className="absolute left-0 top-[calc(100%+8px)] z-20 min-w-full w-max overflow-hidden rounded-xl border border-[#E5E7EB] bg-white shadow-xl shadow-[#11182714]">
+      <AnimatePresence>
+{isOpen && (
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.15 }} className="absolute left-0 top-[calc(100%+8px)] z-20 min-w-full w-max overflow-hidden rounded-xl border border-[#E5E7EB] bg-white shadow-xl shadow-[#11182714]">
           <div className="max-h-64 overflow-y-auto py-1">
             {options.map((option) => {
               const isSelected = value === option.value;
@@ -1696,8 +1668,9 @@ function FilterDropdown({
               );
             })}
           </div>
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -1761,8 +1734,9 @@ function AccountFilterDropdown({
         <span className="truncate">{selectedLabel}</span>
         <ChevronRight className={cn('h-4 w-4 shrink-0 transition-transform', isOpen && 'rotate-90')} />
       </button>
-      {isOpen && (
-        <div className="absolute left-0 top-[calc(100%+8px)] z-20 min-w-full w-max overflow-hidden rounded-xl border border-[#E5E7EB] bg-white shadow-xl shadow-[#11182714]">
+      <AnimatePresence>
+{isOpen && (
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.15 }} className="absolute left-0 top-[calc(100%+8px)] z-20 min-w-full w-max overflow-hidden rounded-xl border border-[#E5E7EB] bg-white shadow-xl shadow-[#11182714]">
           <div className="max-h-64 overflow-y-auto">
             <div className="py-1 border-b border-[#F3F4F6]">
               {renderOption('All Account', 'All Accounts')}
@@ -1784,8 +1758,9 @@ function AccountFilterDropdown({
               </div>
             )}
           </div>
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -499,8 +499,9 @@ function FilterDropdown({
         <span className="truncate">{displayLabel}</span>
         <ChevronRight className={cn('h-4 w-4 shrink-0 transition-transform', isOpen && 'rotate-90')} />
       </button>
-      {isOpen && (
-        <div className="absolute left-0 top-[calc(100%+8px)] z-20 w-full overflow-hidden rounded-xl border border-[#E5E7EB] bg-white shadow-xl shadow-[#11182714]">
+      <AnimatePresence>
+{isOpen && (
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.15 }} className="absolute left-0 top-[calc(100%+8px)] z-20 w-full overflow-hidden rounded-xl border border-[#E5E7EB] bg-white shadow-xl shadow-[#11182714]">
           <div className="max-h-64 overflow-y-auto py-1">
             {options.map((option) => {
               const isSelected = value === option;
@@ -526,8 +527,9 @@ function FilterDropdown({
               );
             })}
           </div>
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </div>
   );
 }
