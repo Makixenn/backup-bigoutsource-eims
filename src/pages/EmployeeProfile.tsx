@@ -7,6 +7,7 @@ import {
   Briefcase,
   Calendar,
   ChevronRight,
+  CheckCircle2,
   Clock,
   Edit,
   Eye,
@@ -748,6 +749,13 @@ export default function EmployeeProfile() {
                 <div className="flex gap-3">
                   {isEditing ? (
                     <>
+        <motion.div variants={containerVariants} initial="hidden" animate="show" className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          <motion.div variants={itemVariants} className="lg:col-span-8 space-y-8 relative z-50">
+            <ProfileSection icon={Briefcase} title="Work & Account Info" iconColorClass="text-blue-600 bg-blue-50" className="relative z-50">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
+                <ProfileField label="Department/Account Type" icon={Briefcase} editing={isEditing}>
+                  {isEditing ? (
+                    <div className={cn("relative transition-all", isAccountDropdownOpen ? "z-50" : "z-10")}>
                       <button
                         type="button"
                         onClick={cancelEditing}
@@ -757,6 +765,52 @@ export default function EmployeeProfile() {
                         <X className="w-4 h-4" />
                         Cancel
                       </button>
+                      <AnimatePresence>
+                        {isAccountDropdownOpen && (
+                          <>
+                            <div className="fixed inset-0 z-10" onClick={() => setIsAccountDropdownOpen(false)} />
+                            <motion.div
+                              initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                              transition={{ duration: 0.15, ease: 'easeOut' }}
+                              className="absolute left-0 right-0 top-[calc(100%+8px)] z-20 overflow-hidden rounded-xl border border-[#E5E7EB] bg-white shadow-xl shadow-[#11182714]"
+                            >
+                              {accounts.length ? (
+                                <div className="max-h-64 overflow-y-auto">
+                                  <AccountDropdownGroup title="Internal" accounts={internalAccounts} selectedValue={form.accountAssignment} onSelect={(acc) => { updateForm('accountAssignment', acc.name); setIsAccountDropdownOpen(false); }} />
+                                  <AccountDropdownGroup title="External" accounts={externalAccounts} selectedValue={form.accountAssignment} onSelect={(acc) => { updateForm('accountAssignment', acc.name); setIsAccountDropdownOpen(false); }} />
+                                </div>
+                              ) : (
+                                <div className="px-3 py-3 text-xs font-bold text-[#6B7280]">No departments yet</div>
+                              )}
+                            </motion.div>
+                          </>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  ) : (
+                    employee.accountAssignment || 'Not Assigned'
+                  )}
+                </ProfileField>
+                <ProfileField label="BigOutsource Email" icon={Mail} editing={isEditing}>
+                  {isEditing ? <GeneratedValue value={preview.boEmail} placeholder={accountBasedPreviewPlaceholder} /> : employee.boEmail || 'Not Assigned'}
+                </ProfileField>
+                <ProfileField label="Email Password" icon={Key} editing={isEditing}>
+                  {isEditing ? <Input value={form.emailPassword} onChange={(value) => updateForm('emailPassword', value)} placeholder="e.g. P@ssw0rd123" /> : employee.emailPassword || 'Not Assigned'}
+                </ProfileField>
+                <ProfileField label="LMS Account" icon={User} editing={isEditing}>
+                  {isEditing ? (
+                    <div className="px-3 py-2.5 bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl text-sm font-bold text-[#4B5563]">
+                      {generateLmsAccount(formatEmployeeName(form.firstName, form.lastName)) || 'Generated after name is entered'}
+                    </div>
+                  ) : (
+                    employee.lmsAccount || 'Not Assigned'
+                  )}
+                </ProfileField>
+                <ProfileField label="Status" icon={ShieldCheck} editing={isEditing}>
+                  {isEditing ? (
+                    <div className={cn("relative transition-all", isStatusDropdownOpen ? "z-50" : "z-10")}>
                       <button
                         type="submit"
                         disabled={isSaving || !hasChanges}
@@ -768,6 +822,51 @@ export default function EmployeeProfile() {
                     </>
                   ) : canManageEmployee ? (
                     <div className="flex gap-3">
+                      <AnimatePresence>
+                        {isStatusDropdownOpen && (
+                          <>
+                            <div className="fixed inset-0 z-10" onClick={() => setIsStatusDropdownOpen(false)} />
+                            <motion.div
+                              initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                              transition={{ duration: 0.15, ease: 'easeOut' }}
+                              className="absolute left-0 right-0 top-[calc(100%+8px)] z-20 overflow-hidden rounded-xl border border-[#E5E7EB] bg-white shadow-xl shadow-[#11182714]"
+                            >
+                              <div className="max-h-64 overflow-y-auto py-1">
+                                {[{ id: 'active', name: 'Active' }, { id: 'inactive', name: 'Inactive' }].map((opt) => {
+                                  const isSelected = form.status === opt.id;
+                                  return (
+                                    <button
+                                      key={opt.id}
+                                      type="button"
+                                      onClick={() => {
+                                        updateForm('status', opt.id as any);
+                                        setIsStatusDropdownOpen(false);
+                                      }}
+                                      className={cn(
+                                        "flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left transition-colors hover:bg-[#F3F4F6]",
+                                        isSelected ? "bg-[#EFF6FF]" : ""
+                                      )}
+                                    >
+                                      <span className={cn("text-sm font-semibold", isSelected ? "text-[#2563EB]" : "text-[#4B5563]")}>{opt.name}</span>
+                                      {isSelected && <CheckCircle2 className="h-4 w-4 shrink-0 text-[#2563EB]" />}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </motion.div>
+                          </>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  ) : (
+                    formatStatus(employee.status)
+                  )}
+                </ProfileField>
+                <ProfileField label="Site" icon={MapPin} editing={isEditing}>
+                  {isEditing ? (
+                    <div className={cn("relative transition-all", isSiteDropdownOpen ? "z-50" : "z-10")}>
                       <button
                         type="button"
                         onClick={startEditing}
@@ -797,6 +896,37 @@ export default function EmployeeProfile() {
                           <>
                             <Archive className="w-4 h-4" />
                             Archive
+                            <div className="fixed inset-0 z-10" onClick={() => setIsSiteDropdownOpen(false)} />
+                            <motion.div
+                              initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                              transition={{ duration: 0.15, ease: 'easeOut' }}
+                              className="absolute left-0 right-0 top-[calc(100%+8px)] z-20 overflow-hidden rounded-xl border border-[#E5E7EB] bg-white shadow-xl shadow-[#11182714]"
+                            >
+                              <div className="max-h-64 overflow-y-auto py-1">
+                                {sites.map((site) => {
+                                  const isSelected = form.siteId === site.id;
+                                  return (
+                                    <button
+                                      key={site.id}
+                                      type="button"
+                                      onClick={() => {
+                                        updateForm('siteId', site.id);
+                                        setIsSiteDropdownOpen(false);
+                                      }}
+                                      className={cn(
+                                        "flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left transition-colors hover:bg-[#F3F4F6]",
+                                        isSelected ? "bg-[#EFF6FF]" : ""
+                                      )}
+                                    >
+                                      <span className={cn("text-sm font-semibold truncate", isSelected ? "text-[#2563EB]" : "text-[#4B5563]")}>{site.name}</span>
+                                      {isSelected && <CheckCircle2 className="h-4 w-4 shrink-0 text-[#2563EB]" />}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </motion.div>
                           </>
                         )}
                       </button>
@@ -865,6 +995,79 @@ export default function EmployeeProfile() {
                         </div>
                       ) : (
                         employee.lmsAccount || 'Not Assigned'
+          <motion.div variants={itemVariants} className="lg:col-span-4 space-y-8 relative z-50">
+            <ProfileSection icon={ShieldAlert} title="Security Compliance" compact iconColorClass="text-amber-600 bg-amber-50" className="relative z-50">
+              <div className="space-y-4">
+                <ComplianceField
+                  label="ESET Status"
+                  value={formatStatus(employee.esetStatus)}
+                  editing={isEditing}
+                  status={employee.esetStatus === 'active'}
+                >
+                  <div className={cn("relative transition-all", isEsetDropdownOpen ? "z-50" : "z-10")}>
+                    <button
+                      type="button"
+                      onClick={() => setIsEsetDropdownOpen((current) => !current)}
+                      className={cn(
+                        'flex w-full items-center justify-between gap-3 rounded-xl border bg-white px-3 py-2.5 text-left text-sm font-bold text-[#4B5563] outline-none transition-all hover:border-[#CBD5E1] focus:ring-2 focus:ring-[#111827]',
+                        'border-[#E5E7EB]'
+                      )}
+                    >
+                      <span className="truncate">{formatStatus(form.esetStatus)}</span>
+                      <ChevronRight className={cn('h-4 w-4 shrink-0 transition-transform text-[#9CA3AF]', isEsetDropdownOpen && 'rotate-90')} />
+                    </button>
+                    <AnimatePresence>
+                      {isEsetDropdownOpen && (
+                        <>
+                          <div className="fixed inset-0 z-10" onClick={() => setIsEsetDropdownOpen(false)} />
+                          <motion.div
+                            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                            transition={{ duration: 0.15, ease: 'easeOut' }}
+                            className="absolute left-0 right-0 top-[calc(100%+8px)] z-20 overflow-hidden rounded-xl border border-[#E5E7EB] bg-white shadow-xl shadow-[#11182714]"
+                          >
+                            <div className="max-h-64 overflow-y-auto py-1">
+                              {[{ id: 'active', name: 'Active' }, { id: 'inactive', name: 'Inactive' }].map((opt) => {
+                                const isSelected = form.esetStatus === opt.id;
+                                return (
+                                  <button
+                                    key={opt.id}
+                                    type="button"
+                                    onClick={() => {
+                                      updateForm('esetStatus', opt.id as any);
+                                      setIsEsetDropdownOpen(false);
+                                    }}
+                                    className={cn(
+                                      "flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left transition-colors hover:bg-[#F3F4F6]",
+                                      isSelected ? "bg-[#EFF6FF]" : ""
+                                    )}
+                                  >
+                                    <span className={cn("text-sm font-semibold", isSelected ? "text-[#2563EB]" : "text-[#4B5563]")}>{opt.name}</span>
+                                    {isSelected && <CheckCircle2 className="h-4 w-4 shrink-0 text-[#2563EB]" />}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </motion.div>
+                        </>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </ComplianceField>
+                <ComplianceField
+                  label="ActivityWatch"
+                  value={employee.activityWatchStatus === 'installed' ? 'Installed' : 'Missing'}
+                  editing={isEditing}
+                  status={employee.activityWatchStatus === 'installed'}
+                >
+                  <div className={cn("relative transition-all", isActivityWatchDropdownOpen ? "z-50" : "z-10")}>
+                    <button
+                      type="button"
+                      onClick={() => setIsActivityWatchDropdownOpen((current) => !current)}
+                      className={cn(
+                        'flex w-full items-center justify-between gap-3 rounded-xl border bg-white px-3 py-2.5 text-left text-sm font-bold text-[#4B5563] outline-none transition-all hover:border-[#CBD5E1] focus:ring-2 focus:ring-[#111827]',
+                        'border-[#E5E7EB]'
                       )}
                     </ProfileField>
                     <ProfileField label="Status" icon={ShieldCheck} editing={isEditing}>
@@ -965,6 +1168,30 @@ export default function EmployeeProfile() {
                         </div>
                       ) : (
                         employee.site || 'Unassigned'
+                            <div className="max-h-64 overflow-y-auto py-1">
+                              {[{ id: 'installed', name: 'Installed' }, { id: 'missing', name: 'Missing' }].map((opt) => {
+                                const isSelected = form.activityWatchStatus === opt.id;
+                                return (
+                                  <button
+                                    key={opt.id}
+                                    type="button"
+                                    onClick={() => {
+                                      updateForm('activityWatchStatus', opt.id as any);
+                                      setIsActivityWatchDropdownOpen(false);
+                                    }}
+                                    className={cn(
+                                      "flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left transition-colors hover:bg-[#F3F4F6]",
+                                      isSelected ? "bg-[#EFF6FF]" : ""
+                                    )}
+                                  >
+                                    <span className={cn("text-sm font-semibold", isSelected ? "text-[#2563EB]" : "text-[#4B5563]")}>{opt.name}</span>
+                                    {isSelected && <CheckCircle2 className="h-4 w-4 shrink-0 text-[#2563EB]" />}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </motion.div>
+                        </>
                       )}
                     </ProfileField>
                   </div>
@@ -1435,17 +1662,19 @@ function ProfileSection({
   children,
   compact = false,
   iconColorClass = 'text-[#111827] bg-[#F3F4F6]',
+  className,
 }: {
   icon: ElementType;
   title: string;
   children: ReactNode;
   compact?: boolean;
   iconColorClass?: string;
+  className?: string;
 }) {
   return (
     <motion.section
       whileHover={{ y: -4, transition: { type: 'spring', stiffness: 380, damping: 30 } }}
-      className={cn('bg-white rounded-2xl border border-[#E5E7EB] shadow-sm hover:shadow-xl transition-shadow duration-300', compact ? 'p-6' : 'p-8')}
+      className={cn('bg-white rounded-2xl border border-[#E5E7EB] shadow-sm hover:shadow-xl transition-shadow duration-300', compact ? 'p-6' : 'p-8', className)}
     >
       <div className="flex items-center gap-3 mb-8">
         <div className={cn('p-2 rounded-xl', iconColorClass)}>
@@ -1612,10 +1841,12 @@ function AccountDropdownGroup({
   title,
   accounts,
   onSelect,
+  selectedValue,
 }: {
   title: string;
   accounts: AccountOption[];
   onSelect: (account: AccountOption) => void;
+  selectedValue?: string;
 }) {
   if (!accounts.length) return null;
 
@@ -1624,16 +1855,23 @@ function AccountDropdownGroup({
       <div className="sticky top-0 bg-[#F9FAFB] px-3 py-2 text-[10px] font-black uppercase tracking-widest text-[#9CA3AF]">
         {title}
       </div>
-      {accounts.map((account) => (
-        <button
-          key={account.id}
-          type="button"
-          onClick={() => onSelect(account)}
-          className="flex w-full items-center justify-between gap-3 border-t border-[#F3F4F6] px-3 py-2.5 text-left text-sm font-bold text-[#111827] transition-all hover:bg-[#F9FAFB]"
-        >
-          <span className="truncate">{account.name}</span>
-        </button>
-      ))}
+      {accounts.map((account) => {
+        const isSelected = selectedValue === account.name;
+        return (
+          <button
+            key={account.id}
+            type="button"
+            onClick={() => onSelect(account)}
+            className={cn(
+              "flex w-full items-center justify-between gap-3 border-t border-[#F3F4F6] px-3.5 py-2.5 text-left transition-colors hover:bg-[#F3F4F6]",
+              isSelected ? "bg-[#EFF6FF]" : ""
+            )}
+          >
+            <span className={cn("truncate text-sm font-bold", isSelected ? "text-[#2563EB]" : "text-[#111827]")}>{account.name}</span>
+            {isSelected && <CheckCircle2 className="h-4 w-4 shrink-0 text-[#2563EB]" />}
+          </button>
+        );
+      })}
     </div>
   );
 }
