@@ -289,38 +289,7 @@ export default function Departments() {
     navigate(`/directory?account=${encodeURIComponent(dept.name)}`);
   };
 
-  const exportEmployees = (dept: Department) => {
-    setOpenMenuId(null);
-    const list = activeEmployeesFor(dept);
-    if (!list.length) {
-      toast.error('No active employees found for this department');
-      return;
-    }
-    const rows = list.map((emp) => ({
-      ID: emp.employeeId || emp.employeeNumber || emp.id || '',
-      Name: emp.fullName || (emp as any).name || '',
-      Account: emp.accountAssignment || (emp as any).account || '',
-      'Phone Number': emp.phone || '',
-      Address: emp.address || '',
-      'Bigoutsource Email': emp.boEmail || (emp as any).bigoutsourceEmail || '',
-      'Email Password': emp.emailPassword || '',
-      'LMS Account': emp.lmsAccount || '',
-      Status: emp.status || '',
-      Site: emp.site || '',
-      'PC Name': emp.pcName || '',
-      'RustDesk ID': emp.rustDeskId || emp.rustdeskId || '',
-      'Remote ID': emp.remoteId || '',
-      ESET: emp.esetStatus || '',
-      'BIOS Date': emp.biosDate || '',
-      ActivityWatch: emp.activityWatchStatus || '',
-      'Windows License Key': emp.windowsKey || '',
-    }));
-    const ws = XLSX.utils.json_to_sheet(rows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Employees');
-    XLSX.writeFile(wb, `${safeFilePart(dept.name)}_Employees.xlsx`);
-    toast.success('Department employees exported');
-  };
+
 
   const addDepartment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -511,7 +480,6 @@ export default function Departments() {
                 onEdit={openEditModal}
                 onDelete={openDeleteModal}
                 onManageEmployees={manageEmployees}
-                onExportEmployees={exportEmployees}
               />
               <DepartmentGroup
                 title="External"
@@ -524,7 +492,6 @@ export default function Departments() {
                 onEdit={openEditModal}
                 onDelete={openDeleteModal}
                 onManageEmployees={manageEmployees}
-                onExportEmployees={exportEmployees}
               />
             </motion.div>
           )}
@@ -999,7 +966,6 @@ function DepartmentGroup({
   onEdit,
   onDelete,
   onManageEmployees,
-  onExportEmployees,
 }: {
   title: string;
   departments: Department[];
@@ -1011,7 +977,6 @@ function DepartmentGroup({
   onEdit: (dept: Department) => void;
   onDelete: (dept: Department) => void;
   onManageEmployees: (dept: Department) => void;
-  onExportEmployees: (dept: Department) => void;
 }) {
   if (!departments.length) return null;
 
@@ -1043,7 +1008,6 @@ function DepartmentGroup({
               onEdit={() => onEdit(dept)}
               onDelete={() => onDelete(dept)}
               onManageEmployees={() => onManageEmployees(dept)}
-              onExportEmployees={() => onExportEmployees(dept)}
             />
           </motion.div>
         ))}
@@ -1062,7 +1026,6 @@ function DepartmentCard({
   onEdit,
   onDelete,
   onManageEmployees,
-  onExportEmployees,
 }: {
   department: Department;
   count: number;
@@ -1073,7 +1036,6 @@ function DepartmentCard({
   onEdit: () => void;
   onDelete: () => void;
   onManageEmployees: () => void;
-  onExportEmployees: () => void;
 }) {
   const menuRef = useRef<HTMLDivElement>(null);
   const isInternal = department.accountType === 'internal';
@@ -1112,15 +1074,22 @@ function DepartmentCard({
                 <MoreVertical className="h-4 w-4" />
               </button>
 
+              <AnimatePresence>
               {menuOpen && (
-                <div className="absolute right-0 top-[calc(100%+6px)] z-30 w-52 overflow-hidden rounded-xl border border-[#E5E7EB] bg-white py-1 shadow-xl shadow-black/10">
+                <motion.div 
+                  initial={{ opacity: 0, y: -10, scale: 0.95 }} 
+                  animate={{ opacity: 1, y: 0, scale: 1 }} 
+                  exit={{ opacity: 0, y: -10, scale: 0.95 }} 
+                  transition={{ duration: 0.15 }} 
+                  className="absolute right-0 top-[calc(100%+6px)] z-30 w-52 overflow-hidden rounded-xl border border-[#E5E7EB] bg-white py-1 shadow-xl shadow-black/10"
+                >
                   <DepartmentAction icon={Edit3} label="Edit Department" onClick={onEdit} />
                   <DepartmentAction icon={Users} label="Manage Employees" onClick={onManageEmployees} />
-                  <DepartmentAction icon={Download} label="Export Employees" onClick={onExportEmployees} />
                   <div className="my-1 border-t border-[#F3F4F6]" />
                   <DepartmentAction icon={Trash2} label="Delete Department" onClick={onDelete} destructive />
-                </div>
+                </motion.div>
               )}
+              </AnimatePresence>
             </div>
           )}
         </div>
