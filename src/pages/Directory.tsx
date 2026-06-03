@@ -39,7 +39,7 @@ type SiteOption = {
   name: string;
 };
 
-type AccountOption = {
+export type AccountOption = {
   id: string;
   name: string;
   accountType: 'internal' | 'external';
@@ -336,7 +336,7 @@ function generatedPreview(form: AddEmployeeForm, account?: AccountOption) {
   };
 }
 
-function normalizeAccountList(value: any) {
+export function normalizeAccountList(value: any) {
   return asArray(value).map(normalizeAccount).filter((account: any): account is AccountOption => Boolean(account));
 }
 
@@ -1810,7 +1810,7 @@ function FilterDropdown({
   );
 }
 
-function AccountFilterDropdown({
+export function AccountFilterDropdown({
   value,
   onChange,
   internalAccounts,
