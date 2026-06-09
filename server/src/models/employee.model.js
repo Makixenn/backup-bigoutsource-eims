@@ -79,7 +79,6 @@ function toDatabasePayload(data, { includeId = false } = {}) {
   if (valueFrom(data, 'rustdeskId', 'rustDeskId') !== undefined) {
     payload.rustdesk_id = blankToNull(valueFrom(data, 'rustdeskId', 'rustDeskId'));
   }
-  if (data?.remoteId !== undefined) payload.remote_id = blankToNull(data.remoteId);
   if (data?.esetStatus !== undefined) payload.eset = normalizeEset(data.esetStatus);
   if (data?.biosDate !== undefined) payload.bios_date = blankToNull(data.biosDate);
   if (data?.activityWatchStatus !== undefined) {
@@ -123,7 +122,6 @@ function normalize(row) {
     windowsLicenseKey: row.windows_license_key || '',
     rustdeskId: row.rustdesk_id || '',
     rustDeskId: row.rustdesk_id || '',
-    remoteId: row.remote_id || '',
     esetStatus: row.eset || 'inactive',
     eset: row.eset || 'inactive',
     activityWatchStatus: row.activitywatch || 'missing',

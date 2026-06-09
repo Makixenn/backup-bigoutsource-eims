@@ -10,7 +10,7 @@
 import { userCapabilities } from '../config/capabilities.js';
 
 // Read-shape keys (as produced by the model's normalize()).
-const SECRET_READ_FIELDS = ['emailPassword', 'windowsKey', 'windowsLicenseKey', 'rustdeskId', 'rustDeskId', 'remoteId'];
+const SECRET_READ_FIELDS = ['emailPassword', 'windowsKey', 'windowsLicenseKey', 'rustdeskId', 'rustDeskId'];
 const IT_READ_FIELDS = ['pcName', 'biosDate', 'esetStatus', 'eset', 'activityWatchStatus', 'activitywatch'];
 
 // Write-shape keys (as accepted from the client) grouped by tier.
@@ -24,7 +24,7 @@ const HR_WRITE_FIELDS = [
   'is_archived', 'isArchived',
 ];
 const IT_WRITE_FIELDS = ['pcName', 'biosDate', 'esetStatus', 'activityWatchStatus'];
-const SECRET_WRITE_FIELDS = ['emailPassword', 'windowsKey', 'windowsLicenseKey', 'rustdeskId', 'rustDeskId', 'remoteId'];
+const SECRET_WRITE_FIELDS = ['emailPassword', 'windowsKey', 'windowsLicenseKey', 'rustdeskId', 'rustDeskId'];
 
 function blankFields(target, fields) {
   for (const field of fields) {

@@ -18,7 +18,6 @@ export const createEmployeeValidator = {
   windowsKey: { required: false, type: 'string' },
   rustdeskId: { required: false, type: 'string' },
   rustDeskId: { required: false, type: 'string' },
-  remoteId: { required: false, type: 'string' },
   esetStatus: { required: false, type: 'string', enum: ['active', 'inactive'] },
   activityWatchStatus: { required: false, type: 'string', enum: ['installed', 'missing'] },
 };
@@ -43,7 +42,6 @@ export const updateEmployeeValidator = {
   windowsKey: { required: false, type: 'string' },
   rustdeskId: { required: false, type: 'string' },
   rustDeskId: { required: false, type: 'string' },
-  remoteId: { required: false, type: 'string' },
   esetStatus: { required: false, type: 'string', enum: ['active', 'inactive'] },
   activityWatchStatus: { required: false, type: 'string', enum: ['installed', 'missing'] },
 };

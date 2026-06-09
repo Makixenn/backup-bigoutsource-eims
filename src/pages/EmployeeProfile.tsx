@@ -71,7 +71,6 @@ type EmployeeForm = {
   biosDate: string;
   windowsKey: string;
   rustdeskId: string;
-  remoteId: string;
   esetStatus: 'active' | 'inactive';
   activityWatchStatus: 'installed' | 'missing';
   isArchived?: boolean;
@@ -97,7 +96,6 @@ const emptyEmployee: EmployeeForm = {
   biosDate: '',
   windowsKey: '',
   rustdeskId: '',
-  remoteId: '',
   esetStatus: 'inactive',
   activityWatchStatus: 'missing',
   isArchived: false,
@@ -120,17 +118,12 @@ const editableFields: Array<keyof EmployeeForm> = [
   'biosDate',
   'windowsKey',
   'rustdeskId',
-  'remoteId',
   'esetStatus',
   'activityWatchStatus',
 ];
 
 const suffixOptions = ['Sr.', 'Jr.', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
-const fieldCharacterLimits: Partial<Record<keyof EmployeeForm, number>> = {
-  rustdeskId: 10,
-  remoteId: 10,
-  windowsKey: 25,
-};
+const fieldCharacterLimits: Partial<Record<keyof EmployeeForm, number>> = {};
 
 function normalizeEsetStatus(value?: string): EmployeeForm['esetStatus'] {
   return value === 'Active' || value === 'active' || value === 'installed' ? 'active' : 'inactive';
@@ -229,6 +222,27 @@ function formatEmployeeName(firstName = '', middleName = '', lastName = '', suff
 
 function normalizePhoneInput(value = '') {
   return value.replace(/\D/g, '').slice(0, 11);
+}
+
+function formatRustdeskId(value = '') {
+  return value
+    .replace(/[^\d\s]/g, '')
+    .replace(/\s+/g, ' ')
+    .trimStart()
+    .slice(0, 17);
+}
+
+function formatWindowsLicenseKey(value = '') {
+  return value
+    .replace(/[^a-zA-Z0-9]/g, '')
+    .toUpperCase()
+    .slice(0, 25)
+    .match(/.{1,5}/g)
+    ?.join('-') || '';
+}
+
+function isCompleteWindowsLicenseKey(value = '') {
+  return value.replace(/[^a-zA-Z0-9]/g, '').length === 25;
 }
 
 function applyCharacterLimit(field: keyof EmployeeForm, value: string) {
@@ -341,9 +355,8 @@ function normalizeEmployee(emp: any): EmployeeForm {
     site: emp?.site === 'HQ' ? 'HQ' : emp?.site || '',
     pcName: emp?.pcName || '',
     biosDate: emp?.biosDate ? String(emp.biosDate).slice(0, 10) : '',
-    windowsKey: emp?.windowsKey || '',
-    rustdeskId: emp?.rustdeskId || emp?.rustDeskId || '',
-    remoteId: emp?.remoteId || '',
+    windowsKey: formatWindowsLicenseKey(emp?.windowsKey || ''),
+    rustdeskId: formatRustdeskId(emp?.rustdeskId || emp?.rustDeskId || ''),
     esetStatus: normalizeEsetStatus(emp?.esetStatus || emp?.eset),
     activityWatchStatus: normalizeActivityWatch(emp?.activityWatchStatus),
     isArchived: emp?.is_archived ?? emp?.isArchived ?? false,
@@ -430,7 +443,6 @@ export default function EmployeeProfile() {
     if (!employee.pcName) mildCount++;
     if (!employee.biosDate) mildCount++;
     if (!employee.rustdeskId) mildCount++;
-    if (!employee.remoteId) mildCount++;
     if (!employee.windowsKey) mildCount++;
     if (!employee.boEmail) mildCount++;
     if (!employee.emailPassword) mildCount++;
@@ -528,6 +540,10 @@ export default function EmployeeProfile() {
       }
     } else if (field === 'phone') {
       value = normalizePhoneInput(value);
+    } else if (field === 'rustdeskId') {
+      value = formatRustdeskId(value);
+    } else if (field === 'windowsKey') {
+      value = formatWindowsLicenseKey(value);
     } else if (typeof value === 'string') {
       value = applyCharacterLimit(field, value);
     }
@@ -616,6 +632,12 @@ export default function EmployeeProfile() {
       return;
     }
 
+    if (form.windowsKey && !isCompleteWindowsLicenseKey(form.windowsKey)) {
+      setFormErrors((current) => ({ ...current, windowsKey: 'Windows license key must be 25 characters in 5 groups of 5.' }));
+      toast.error('Please resolve the highlighted fields before saving');
+      return;
+    }
+
     const selectedSite = sites.find((site) => site.id === form.siteId);
     const fullName = formatEmployeeName(form.firstName, form.middleName, form.lastName, form.suffix);
     setIsSaving(true);
@@ -641,7 +663,6 @@ export default function EmployeeProfile() {
         biosDate: form.biosDate || undefined,
         windowsKey: form.windowsKey.trim() || undefined,
         rustdeskId: form.rustdeskId.trim() || undefined,
-        remoteId: form.remoteId.trim() || undefined,
         esetStatus: form.esetStatus,
         activityWatchStatus: form.activityWatchStatus,
       });
@@ -1223,13 +1244,8 @@ export default function EmployeeProfile() {
                       {editingIT ? <Input type="date" value={form.biosDate} onChange={(value) => updateForm('biosDate', value)} /> : employee.biosDate ? new Date(employee.biosDate).toLocaleDateString() : 'Not Set'}
                     </ProfileField>
                     {canViewSecrets && (
-                    <ProfileField label="RustDesk ID" icon={Globe} editing={editingSecrets}>
-                      {editingSecrets ? <Input value={form.rustdeskId} onChange={(value) => updateForm('rustdeskId', value)} placeholder="e.g. 123 456 789" /> : employee.rustdeskId || 'Not Assigned'}
-                    </ProfileField>
-                    )}
-                    {canViewSecrets && (
-                    <ProfileField label="Remote ID" icon={Globe} editing={editingSecrets}>
-                      {editingSecrets ? <Input value={form.remoteId} onChange={(value) => updateForm('remoteId', value)} placeholder="e.g. 123 456 789" /> : employee.remoteId || 'Not Assigned'}
+                    <ProfileField label="RustDesk ID" icon={Globe} editing={editingSecrets} error={formErrors.rustdeskId}>
+                      {editingSecrets ? <Input value={form.rustdeskId} onChange={(value) => updateForm('rustdeskId', value)} placeholder="e.g. 123 456 789" error={Boolean(formErrors.rustdeskId)} /> : employee.rustdeskId || 'Not Assigned'}
                     </ProfileField>
                     )}
                   </div>
@@ -1247,7 +1263,8 @@ export default function EmployeeProfile() {
                             exit={{ opacity: 0, y: -5 }}
                             transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                           >
-                            <Input value={form.windowsKey} onChange={(value) => updateForm('windowsKey', value)} placeholder="e.g. XXXXX-XXXXX-XXXXX-XXXXX-XXXXX" />
+                            <Input value={form.windowsKey} onChange={(value) => updateForm('windowsKey', value)} placeholder="e.g. XXXXX-XXXXX-XXXXX-XXXXX-XXXXX" error={Boolean(formErrors.windowsKey)} />
+                            {formErrors.windowsKey && <span className="mt-1.5 block text-xs font-bold text-red-600">{formErrors.windowsKey}</span>}
                           </motion.div>
                         ) : (
                           <motion.div

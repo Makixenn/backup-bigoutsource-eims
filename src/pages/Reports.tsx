@@ -129,7 +129,6 @@ async function generateEmployeeMasterList(params?: any): Promise<ReportData> {
     'BIOS Date': e.biosDate ?? '',
     'Windows License Key': e.windowsKey ?? '',
     'Rust Desk ID': e.rustDeskId ?? '',
-    'Remote ID': e.remoteId ?? '',
     'ESET Status': capitalize(e.esetStatus),
     'ActivityWatch': capitalize(e.activityWatchStatus),
     'Archived': e.isArchived ? 'Yes' : 'No',
@@ -182,7 +181,6 @@ async function generateITAssetReport(params?: any): Promise<ReportData> {
     'BIOS Date': e.biosDate ?? '',
     'Windows License Key': e.windowsKey ?? '',
     'Rust Desk ID': e.rustDeskId ?? '',
-    'Remote ID': e.remoteId ?? '',
     'ESET Status': capitalize(e.esetStatus),
     'ActivityWatch': capitalize(e.activityWatchStatus),
   }));

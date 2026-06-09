@@ -11,7 +11,6 @@ function toDevice(employee) {
     biosDate: employee.biosDate,
     windowsKey: employee.windowsKey,
     rustdeskId: employee.rustdeskId,
-    remoteId: employee.remoteId,
     esetStatus: employee.esetStatus,
     activityWatchStatus: employee.activityWatchStatus,
     status: employee.pcName ? 'assigned' : 'available',
@@ -55,7 +54,6 @@ export const DeviceModel = {
       biosDate: data.biosDate,
       windowsKey: data.windowsKey,
       rustdeskId: data.rustdeskId,
-      remoteId: data.remoteId,
       esetStatus: data.esetStatus,
       activityWatchStatus: data.activityWatchStatus,
     });

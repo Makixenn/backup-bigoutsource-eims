@@ -72,7 +72,6 @@ type AddEmployeeForm = {
   siteName: string;
   pcName: string;
   rustdeskId: string;
-  remoteId: string;
   esetStatus: 'active' | 'inactive';
   biosDate: string;
   activityWatchStatus: 'installed' | 'missing';
@@ -95,7 +94,6 @@ type DirectoryFieldKey =
   | 'site'
   | 'pcName'
   | 'rustDeskId'
-  | 'remoteId'
   | 'esetStatus'
   | 'biosDate'
   | 'activityWatchStatus'
@@ -143,7 +141,6 @@ function calculateIncompleteData(employee: EmployeeRecord) {
   if (!employee.pcName) mildCount++;
   if (!employee.biosDate) mildCount++;
   if (!employee.rustdeskId && !employee.rustDeskId) mildCount++;
-  if (!employee.remoteId) mildCount++;
   if (!employee.windowsKey) mildCount++;
   if (!employee.boEmail) mildCount++;
   if (!employee.emailPassword) mildCount++;
@@ -210,7 +207,6 @@ const directoryFields: Array<{ key: DirectoryFieldKey; label: string; render: (e
   { key: 'site', label: 'Site', render: (emp) => emp.site || 'Unassigned' },
   { key: 'pcName', label: 'PC Name', render: (emp) => emp.pcName || 'Unassigned' },
   { key: 'rustDeskId', label: 'RustDesk ID', render: (emp) => emp.rustDeskId || emp.rustdeskId || '-' },
-  { key: 'remoteId', label: 'Remote ID', render: (emp) => emp.remoteId || '-' },
   { key: 'esetStatus', label: 'ESET', render: (emp) => emp.esetStatus || 'Inactive' },
   { key: 'biosDate', label: 'BIOS Date', render: (emp) => emp.biosDate || '-' },
   { key: 'activityWatchStatus', label: 'ActivityWatch', render: (emp) => emp.activityWatchStatus || 'Missing' },
@@ -239,7 +235,6 @@ const initialForm: AddEmployeeForm = {
   siteName: '',
   pcName: '',
   rustdeskId: '',
-  remoteId: '',
   esetStatus: 'inactive',
   biosDate: '',
   activityWatchStatus: 'missing',
@@ -257,11 +252,7 @@ const wizardSteps = [
 
 const draftStorageKey = 'employee-onboarding-draft';
 const suffixOptions = ['Sr.', 'Jr.', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
-const fieldCharacterLimits: Partial<Record<keyof AddEmployeeForm, number>> = {
-  rustdeskId: 10,
-  remoteId: 10,
-  windowsKey: 25,
-};
+const fieldCharacterLimits: Partial<Record<keyof AddEmployeeForm, number>> = {};
 
 function titleEsetStatus(value?: string) {
   return value === 'active' || value === 'Active' || value === 'installed' ? 'Active' : 'Inactive';
@@ -296,10 +287,9 @@ function normalizeEmployee(emp: any): EmployeeRecord | null {
     lmsAccount: emp.lmsAccount || generateLmsAccount(emp.fullName || '') || '',
     pcName: emp.pcName || '',
     biosDate: emp.biosDate ? String(emp.biosDate).slice(0, 10) : '',
-    windowsKey: emp.windowsKey || '',
-    rustDeskId: emp.rustDeskId || emp.rustdeskId || '',
-    rustdeskId: emp.rustdeskId || emp.rustDeskId || '',
-    remoteId: emp.remoteId || '',
+    windowsKey: formatWindowsLicenseKey(emp.windowsKey || ''),
+    rustDeskId: formatRustdeskId(emp.rustDeskId || emp.rustdeskId || ''),
+    rustdeskId: formatRustdeskId(emp.rustdeskId || emp.rustDeskId || ''),
     esetStatus: titleEsetStatus(emp.esetStatus || emp.eset) as Employee['esetStatus'],
     activityWatchStatus: titleActivityWatchStatus(emp.activityWatchStatus || emp.activitywatch) as Employee['activityWatchStatus'],
     updatedAt: emp.updatedAt || '',
@@ -349,6 +339,27 @@ function capitalizeNameInput(value = '') {
 
 function normalizePhoneInput(value = '') {
   return value.replace(/\D/g, '').slice(0, 11);
+}
+
+function formatRustdeskId(value = '') {
+  return value
+    .replace(/[^\d\s]/g, '')
+    .replace(/\s+/g, ' ')
+    .trimStart()
+    .slice(0, 17);
+}
+
+function formatWindowsLicenseKey(value = '') {
+  return value
+    .replace(/[^a-zA-Z0-9]/g, '')
+    .toUpperCase()
+    .slice(0, 25)
+    .match(/.{1,5}/g)
+    ?.join('-') || '';
+}
+
+function isCompleteWindowsLicenseKey(value = '') {
+  return value.replace(/[^a-zA-Z0-9]/g, '').length === 25;
 }
 
 function getTodayDateInputValue() {
@@ -621,6 +632,10 @@ export default function Directory() {
           ? capitalizeNameInput(value)
         : field === 'biosDate'
           ? clampToToday(value)
+        : field === 'rustdeskId'
+          ? formatRustdeskId(value)
+        : field === 'windowsKey'
+          ? formatWindowsLicenseKey(value)
           : applyCharacterLimit(field, value);
 
     if (field === 'boEmail') {
@@ -899,7 +914,9 @@ export default function Directory() {
     if ((requireAll || step === 2) && !form.siteId) {
       errors.siteId = 'Select the employee work site.';
     }
-
+    if ((requireAll || step === 3) && form.windowsKey && !isCompleteWindowsLicenseKey(form.windowsKey)) {
+      errors.windowsKey = 'Windows license key must be 25 characters in 5 groups of 5.';
+    }
     return errors;
   };
 
@@ -980,7 +997,7 @@ export default function Directory() {
     if (Object.keys(errors).length) {
       setFormErrors(errors);
       const firstErrorField = Object.keys(errors)[0] as keyof AddEmployeeForm;
-      const errorStep = firstErrorField === 'accountAssignment' ? 1 : firstErrorField === 'siteId' ? 2 : 0;
+      const errorStep = firstErrorField === 'accountAssignment' ? 1 : firstErrorField === 'siteId' ? 2 : firstErrorField === 'windowsKey' || firstErrorField === 'rustdeskId' ? 3 : 0;
       setActiveStep(errorStep);
       toast.error('Please resolve the highlighted fields before submitting');
       return;
@@ -1019,7 +1036,6 @@ export default function Directory() {
         siteId: selectedSite && selectedSite.id !== selectedSite.name ? selectedSite.id : undefined,
         siteName: selectedSite?.name,
         rustdeskId: form.rustdeskId.trim() || undefined,
-        remoteId: form.remoteId.trim() || undefined,
         esetStatus: form.esetStatus,
         biosDate: form.biosDate || undefined,
         activityWatchStatus: form.activityWatchStatus,
@@ -1659,11 +1675,8 @@ export default function Directory() {
 
                         <SectionCard title="IT Assets" eyebrow="Manual">
                           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                            <Field label="RustDesk ID">
-                              <Input value={form.rustdeskId} onChange={(value) => updateForm('rustdeskId', value)} placeholder="RustDesk ID" />
-                            </Field>
-                            <Field label="Remote ID">
-                              <Input value={form.remoteId} onChange={(value) => updateForm('remoteId', value)} placeholder="Remote ID" />
+                            <Field label="RustDesk ID" error={formErrors.rustdeskId}>
+                              <Input value={form.rustdeskId} onChange={(value) => updateForm('rustdeskId', value)} placeholder="123 456 789" error={Boolean(formErrors.rustdeskId)} />
                             </Field>
                             <Field label="ESET">
                               <Select value={form.esetStatus} onChange={(value) => updateForm('esetStatus', value)}>
@@ -1680,9 +1693,11 @@ export default function Directory() {
                                 <option value="installed">Installed</option>
                               </Select>
                             </Field>
-                            <Field label="Windows License Key">
-                              <Input value={form.windowsKey} onChange={(value) => updateForm('windowsKey', value)} placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX" />
-                            </Field>
+                            <div className="md:col-span-2">
+                              <Field label="Windows License Key" error={formErrors.windowsKey}>
+                                <Input value={form.windowsKey} onChange={(value) => updateForm('windowsKey', value)} placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX" error={Boolean(formErrors.windowsKey)} />
+                              </Field>
+                            </div>
                           </div>
                         </SectionCard>
                       </div>
@@ -1872,11 +1887,8 @@ export default function Directory() {
                                 )}
                               </div>
                             </Field>
-                            <Field label="RustDesk ID">
-                              <Input value={form.rustdeskId} onChange={(value) => updateForm('rustdeskId', value)} placeholder="RustDesk ID" />
-                            </Field>
-                            <Field label="Remote ID">
-                              <Input value={form.remoteId} onChange={(value) => updateForm('remoteId', value)} placeholder="Remote ID" />
+                            <Field label="RustDesk ID" error={formErrors.rustdeskId}>
+                              <Input value={form.rustdeskId} onChange={(value) => updateForm('rustdeskId', value)} placeholder="123 456 789" error={Boolean(formErrors.rustdeskId)} />
                             </Field>
                             <Field label="ESET">
                               <Select value={form.esetStatus} onChange={(value) => updateForm('esetStatus', value)}>
@@ -1893,9 +1905,11 @@ export default function Directory() {
                                 <option value="installed">Installed</option>
                               </Select>
                             </Field>
-                            <Field label="Windows License Key">
-                              <Input value={form.windowsKey} onChange={(value) => updateForm('windowsKey', value)} placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX" />
-                            </Field>
+                            <div className="md:col-span-2">
+                              <Field label="Windows License Key" error={formErrors.windowsKey}>
+                                <Input value={form.windowsKey} onChange={(value) => updateForm('windowsKey', value)} placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX" error={Boolean(formErrors.windowsKey)} />
+                              </Field>
+                            </div>
                           </div>
                         </SectionCard>
                         <div className="md:col-span-2 rounded-2xl border border-[#D1D5DB] bg-white p-5 shadow-lg shadow-[#1118270D]">

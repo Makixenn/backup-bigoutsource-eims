@@ -80,7 +80,6 @@ const fieldLabels: Array<[string, string]> = [
   ['siteName', 'Site'],
   ['pcName', 'PC Name'],
   ['rustdeskId', 'RustDesk ID'],
-  ['remoteId', 'Remote ID'],
   ['esetStatus', 'ESET'],
   ['biosDate', 'BIOS Date'],
   ['activityWatchStatus', 'ActivityWatch'],
@@ -825,9 +824,6 @@ function MergeRowsModal({
               <Field label="RustDesk ID">
                 <Input value={form.rustdeskId || ''} onChange={(value) => onChange('rustdeskId', value)} />
               </Field>
-              <Field label="Remote ID">
-                <Input value={form.remoteId || ''} onChange={(value) => onChange('remoteId', value)} />
-              </Field>
               <SelectDropdown
                 label="ESET"
                 value={form.esetStatus || 'inactive'}
@@ -1190,9 +1186,6 @@ function EditRowModal({
                 </Field>
                 <Field label="RustDesk ID">
                   <Input value={form.rustdeskId || ''} onChange={(val) => onChange('rustdeskId', val)} placeholder="e.g. 123 456 789" />
-                </Field>
-                <Field label="Remote ID">
-                  <Input value={form.remoteId || ''} onChange={(val) => onChange('remoteId', val)} placeholder="e.g. 123 456 789" />
                 </Field>
               </div>
             </ProfileSection>
