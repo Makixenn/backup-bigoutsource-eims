@@ -42,6 +42,16 @@ export function isValidDepartmentCode(code = '') {
 
 const KNOWN_SUFFIXES = new Set(['jr', 'jr.', 'sr', 'sr.', 'ii', 'iii', 'iv', 'v', 'md', 'm.d.', 'phd', 'ph.d.', 'esq', 'esq.']);
 
+function formatEmployeeRecordName(firstName = '', middleName = '', lastName = '', suffix = '') {
+  const first = String(firstName || '').trim().replace(/\u00A0/g, ' ');
+  const middle = String(middleName || '').trim().replace(/\u00A0/g, ' ');
+  const last = String(lastName || '').trim().replace(/\u00A0/g, ' ');
+  const suff = String(suffix || '').trim();
+  const givenNames = [first, middle].filter(Boolean).join(' ');
+  const baseName = last && givenNames ? `${last}, ${givenNames}` : [givenNames, last].filter(Boolean).join(' ');
+  return [baseName, suff].filter(Boolean).join(' ').trim();
+}
+
 export function parseEmployeeName(data = {}) {
   const firstNameRaw = String(data.firstName || data.first_name || '').trim();
   const middleNameRaw = String(data.middleName || data.middle_name || '').trim();
@@ -54,7 +64,7 @@ export function parseEmployeeName(data = {}) {
       middleName: middleNameRaw.replace(/\u00A0/g, ' '),
       lastName: lastNameRaw.replace(/\u00A0/g, ' '),
       suffix: suffixRaw,
-      fullName: [firstNameRaw, middleNameRaw, lastNameRaw, suffixRaw].filter(Boolean).join(' ').trim(),
+      fullName: formatEmployeeRecordName(firstNameRaw, middleNameRaw, lastNameRaw, suffixRaw),
     };
   }
 
