@@ -17,7 +17,6 @@ export interface Employee {
   biosDate: string;
   windowsKey: string;
   rustDeskId: string;
-  remoteId: string;
   esetStatus: 'Active' | 'Inactive';
   activityWatchStatus: 'Installed' | 'Missing';
   updatedAt: string;

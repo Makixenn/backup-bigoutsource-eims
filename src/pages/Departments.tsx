@@ -51,7 +51,6 @@ type EmployeeRecord = {
   pcName?: string;
   rustDeskId?: string;
   rustdeskId?: string;
-  remoteId?: string;
   esetStatus?: string;
   biosDate?: string;
   activityWatchStatus?: string;

@@ -12,14 +12,13 @@ import { useAuth } from '@/src/contexts/AuthContext';
 import { AccountFilterDropdown, AccountOption, normalizeAccountList } from './Directory';
 import { cn } from '@/src/lib/utils';
 
-export type AssetFieldKey = 'assigneeName' | 'pcName' | 'biosDate' | 'windowsKey' | 'remoteId' | 'rustdeskId' | 'activityWatchStatus' | 'esetStatus';
+export type AssetFieldKey = 'assigneeName' | 'pcName' | 'biosDate' | 'windowsKey' | 'rustdeskId' | 'activityWatchStatus' | 'esetStatus';
 
 export const assetFields: Array<{ key: AssetFieldKey; label: string; width: string }> = [
   { key: 'assigneeName', label: 'Assignee', width: 'w-[20%]' },
   { key: 'pcName', label: 'PC Name', width: 'w-[16%]' },
   { key: 'biosDate', label: 'BIOS Date', width: 'w-[12%]' },
   { key: 'windowsKey', label: 'Windows License Key', width: 'w-[20%]' },
-  { key: 'remoteId', label: 'Remote ID', width: 'w-[12%]' },
   { key: 'rustdeskId', label: 'RustDesk ID', width: 'w-[12%]' },
   { key: 'activityWatchStatus', label: 'Activity Watch', width: 'w-[12%]' },
   { key: 'esetStatus', label: 'ESET Status', width: 'w-[12%]' },
@@ -27,8 +26,24 @@ export const assetFields: Array<{ key: AssetFieldKey; label: string; width: stri
 
 export const selectableAssetFields = assetFields.filter(f => f.key !== 'assigneeName');
 const maxVisibleFieldCount = 6;
-const defaultVisibleFieldKeys: AssetFieldKey[] = ['assigneeName', 'pcName', 'windowsKey', 'remoteId', 'rustdeskId'];
+const defaultVisibleFieldKeys: AssetFieldKey[] = ['assigneeName', 'pcName', 'windowsKey', 'rustdeskId'];
 
+function formatWindowsLicenseKey(value = '') {
+  return value
+    .replace(/[^a-zA-Z0-9]/g, '')
+    .toUpperCase()
+    .slice(0, 25)
+    .match(/.{1,5}/g)
+    ?.join('-') || '';
+}
+
+function formatRustdeskId(value = '') {
+  return value
+    .replace(/[^\d\s]/g, '')
+    .replace(/\s+/g, ' ')
+    .trimStart()
+    .slice(0, 17);
+}
 
 function asArray(value: any) {
   return Array.isArray(value) ? value : [];
@@ -226,7 +241,7 @@ export default function Assets() {
     const search = searchTerm.toLowerCase();
     if (search) {
       result = result.filter((device) =>
-        [device.pcName, device.remoteId, device.rustdeskId, device.windowsKey, device.assigneeName]
+        [device.pcName, device.rustdeskId, device.windowsKey, device.assigneeName]
           .filter(Boolean)
           .some((value) => String(value).toLowerCase().includes(search))
       );
@@ -334,7 +349,7 @@ export default function Assets() {
                 type="text"
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Search by PC Name, Remote ID, or License..."
+                placeholder="Search by PC Name, RustDesk ID, or License..."
                 className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#E5E7EB] rounded-xl text-sm focus:ring-2 focus:ring-[#111827] outline-none"
               />
             </div>
@@ -534,11 +549,9 @@ export default function Assets() {
                             ) : field.key === 'biosDate' ? (
                               <input type="date" value={drafts[device.id]?.biosDate ?? (device.biosDate || '')} onChange={(e) => handleUpdateDraft(device.id, 'biosDate', e.target.value)} className="w-full px-3 py-2.5 bg-white border border-[#E5E7EB] rounded-xl text-sm text-[#111827] outline-none transition-all focus:ring-2 focus:ring-[#111827]" />
                             ) : field.key === 'windowsKey' ? (
-                              <NumericInput value={drafts[device.id]?.windowsKey ?? (device.windowsKey || '')} onChange={(val: string) => handleUpdateDraft(device.id, 'windowsKey', val)} className="w-full px-3 py-2.5 bg-white border border-[#E5E7EB] rounded-xl text-sm text-[#111827] outline-none transition-all focus:ring-2 focus:ring-[#111827]" placeholder="Windows License Key" />
-                            ) : field.key === 'remoteId' ? (
-                              <NumericInput value={drafts[device.id]?.remoteId ?? (device.remoteId || '')} onChange={(val: string) => handleUpdateDraft(device.id, 'remoteId', val)} className="w-full px-3 py-2.5 bg-white border border-[#E5E7EB] rounded-xl text-sm text-[#111827] outline-none transition-all focus:ring-2 focus:ring-[#111827]" placeholder="Remote ID" />
+                              <input type="text" value={drafts[device.id]?.windowsKey ?? (device.windowsKey || '')} onChange={(e) => handleUpdateDraft(device.id, 'windowsKey', formatWindowsLicenseKey(e.target.value))} className="w-full px-3 py-2.5 bg-white border border-[#E5E7EB] rounded-xl text-sm text-[#111827] outline-none transition-all focus:ring-2 focus:ring-[#111827]" placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX" />
                             ) : field.key === 'rustdeskId' ? (
-                              <NumericInput value={drafts[device.id]?.rustdeskId ?? (device.rustdeskId || '')} onChange={(val: string) => handleUpdateDraft(device.id, 'rustdeskId', val)} className="w-full px-3 py-2.5 bg-white border border-[#E5E7EB] rounded-xl text-sm text-[#111827] outline-none transition-all focus:ring-2 focus:ring-[#111827]" placeholder="RustDesk ID" />
+                              <input type="text" value={drafts[device.id]?.rustdeskId ?? (device.rustdeskId || '')} onChange={(e) => handleUpdateDraft(device.id, 'rustdeskId', formatRustdeskId(e.target.value))} className="w-full px-3 py-2.5 bg-white border border-[#E5E7EB] rounded-xl text-sm text-[#111827] outline-none transition-all focus:ring-2 focus:ring-[#111827]" placeholder="123 456 789" />
                             ) : field.key === 'activityWatchStatus' ? (
                               <select value={drafts[device.id]?.activityWatchStatus ?? (device.activityWatchStatus || 'missing')} onChange={(e) => handleUpdateDraft(device.id, 'activityWatchStatus', e.target.value)} className="w-full px-3 py-2.5 bg-white border border-[#E5E7EB] rounded-xl text-sm text-[#111827] outline-none transition-all focus:ring-2 focus:ring-[#111827]">
                                 <option value="missing">Missing</option>
@@ -570,10 +583,6 @@ export default function Assets() {
                                 {device.windowsKey && (
                                   <p className="text-[10px] text-[#9CA3AF] font-bold uppercase tracking-tighter mt-0.5 ml-[22px]">{device.windowsKey}</p>
                                 )}
-                              </div>
-                            ) : field.key === 'remoteId' ? (
-                              <div className="py-1 px-3 bg-[#F3F4F6] rounded-lg w-fit">
-                                <p className="text-xs font-black text-[#111827] font-mono">{device.remoteId || 'No remote ID'}</p>
                               </div>
                             ) : field.key === 'rustdeskId' ? (
                               <div className="py-1 px-3 bg-[#F3F4F6] rounded-lg w-fit">
@@ -668,7 +677,6 @@ export default function Assets() {
                           const fieldLabels: Record<string, string> = {
                             biosDate: 'BIOS Date',
                             windowsKey: 'Windows License',
-                            remoteId: 'Remote ID',
                             rustdeskId: 'RustDesk ID'
                           };
                           return (

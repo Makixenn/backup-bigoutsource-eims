@@ -29,7 +29,6 @@ const trackedFields = [
   'biosDate',
   'windowsKey',
   'rustdeskId',
-  'remoteId',
   'esetStatus',
   'activityWatchStatus',
   'isArchived',
