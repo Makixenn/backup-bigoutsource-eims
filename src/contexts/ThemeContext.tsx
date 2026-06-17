@@ -50,10 +50,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem(BASE_STORAGE_KEY, JSON.stringify(isDark));
   }, [isDark, storageKey]);
 
-  const toggleTheme = () => setIsDark((prev) => !prev);
+  const toggleTheme = React.useCallback(() => setIsDark((prev) => !prev), []);
+  const value = React.useMemo(() => ({ isDark, toggleTheme }), [isDark, toggleTheme]);
 
   return (
-    <ThemeContext.Provider value={{ isDark, toggleTheme }}>
+    <ThemeContext.Provider value={value}>
       {children}
     </ThemeContext.Provider>
   );

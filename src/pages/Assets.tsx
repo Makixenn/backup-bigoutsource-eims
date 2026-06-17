@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { deviceService } from '@/src/features/assets/services/deviceService';
 import { accountService } from '@/src/services/accountService';
 import { useAuth } from '@/src/contexts/AuthContext';
-import { AccountOption, normalizeAccountList } from '@/src/features/employees/pages/Directory';
+import { AccountOption, normalizeAccountList } from '@/src/pages/Directory';
 import { AccountFilterDropdown } from '@/src/features/employees/components/DirectoryUI';
 import { cn } from '@/src/lib/utils';
 

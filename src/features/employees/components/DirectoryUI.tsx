@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, ReactNode } from 'react';
 import { ChevronRight, CheckCircle2, Sparkles, RotateCcw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/src/lib/utils';
-import { AccountOption } from '@/src/features/employees/pages/Directory';
+import { AccountOption } from '@/src/pages/Directory';
 
 export function SectionCard({
   title,

@@ -143,6 +143,27 @@ export const EmployeeModel = {
     return rows.map(normalize);
   },
 
+  async findSimilarIdentities(baseIdentifier, lmsBase) {
+    const filters = [];
+    if (baseIdentifier) {
+      filters.push(`bigoutsource_email.ilike.${baseIdentifier}%`);
+      filters.push(`pc_name.ilike.%-${baseIdentifier}%`);
+    }
+    if (lmsBase) {
+      filters.push(`lms_account.ilike.${lmsBase}%`);
+    }
+
+    if (filters.length === 0) return [];
+
+    const rows = await supabaseRequest('employees', {
+      searchParams: {
+        select: 'id, bigoutsource_email, pc_name, lms_account',
+        or: `(${filters.join(',')})`,
+      },
+    });
+    return rows.map(normalize);
+  },
+
   async findById(id) {
     const rows = await supabaseRequest('employees', {
       searchParams: {
@@ -152,6 +173,28 @@ export const EmployeeModel = {
       },
     });
     return normalize(rows[0]);
+  },
+
+  async findByIdsOrNames(ids = [], names = []) {
+    if (ids.length === 0 && names.length === 0) return [];
+    const filters = [];
+    if (ids.length > 0) {
+      const idList = ids.map(id => `"${id}"`).join(',');
+      filters.push(`id.in.(${idList})`);
+    }
+    if (names.length > 0) {
+      const nameFilters = names.map(name => `name.ilike."${name}"`);
+      filters.push(...nameFilters);
+    }
+    
+    // Split into smaller chunks or use a single OR query
+    const rows = await supabaseRequest('employees', {
+      searchParams: {
+        select: 'id, name',
+        or: `(${filters.join(',')})`,
+      },
+    });
+    return rows.map(normalize);
   },
 
   // Employees that are inactive but have NOT been archived yet.
@@ -174,6 +217,16 @@ export const EmployeeModel = {
       body: payload,
     });
     return normalize(rows[0]);
+  },
+
+  async insertMany(dataArray) {
+    if (!dataArray || dataArray.length === 0) return [];
+    const payloads = dataArray.map(data => toDatabasePayload(data, { includeId: true }));
+    const rows = await supabaseRequest('employees', {
+      method: 'POST',
+      body: payloads,
+    });
+    return rows.map(normalize);
   },
 
   async update(id, data) {

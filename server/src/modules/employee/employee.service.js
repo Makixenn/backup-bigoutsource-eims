@@ -105,10 +105,12 @@ async function withGeneratedIdentity(data, existing = null) {
   const merged = { ...(existing || {}), ...(data || {}) };
   const name = parseEmployeeName(merged);
   const account = await resolveAccount(merged, existing);
-  const allEmployees = await EmployeeModel.findAll();
-  const used = collectUsedValues(allEmployees, existing?.id);
-  const defaultLmsAccount = withNumericSuffix(buildLmsUsernameBase(name), used.lmsUsernames);
-  const identifier = withNumericSuffix(buildEmployeeIdentifierBase(name), used.employeeIdentifiers);
+  const baseLmsAccount = buildLmsUsernameBase(name);
+  const baseIdentifier = buildEmployeeIdentifierBase(name);
+  const similarEmployees = await EmployeeModel.findSimilarIdentities(baseIdentifier, baseLmsAccount);
+  const used = collectUsedValues(similarEmployees, existing?.id);
+  const defaultLmsAccount = withNumericSuffix(baseLmsAccount, used.lmsUsernames);
+  const identifier = withNumericSuffix(baseIdentifier, used.employeeIdentifiers);
 
   if (!name.fullName || !name.lastName) throw new AppError('first name and last name are required', 400);
   if (!defaultLmsAccount || !identifier) throw new AppError('Unable to generate employee identity from the provided name', 400);

@@ -148,7 +148,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     toast.success('Logged out');
   };
 
-  const value = {
+  const value = React.useMemo(() => ({
     user,
     loading,
     login,
@@ -159,7 +159,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isIT: user?.role === 'super_admin' || user?.role === 'admin' || user?.role === 'it_admin',
     isHR: user?.role === 'super_admin' || user?.role === 'admin' || user?.role === 'hr_admin',
     can: (capability: Capability) => userCan(user, capability),
-  };
+  }), [user, loading, refreshUser]);
 
   return (
     <AuthContext.Provider value={value}>

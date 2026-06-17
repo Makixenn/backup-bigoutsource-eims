@@ -233,8 +233,14 @@ function mergeRecords(records) {
   return merged;
 }
 
-async function loadExistingEmployees() {
-  const employees = await EmployeeModel.findAll();
+async function loadExistingEmployees(batchRows = []) {
+  const idsToSearch = [...new Set(batchRows.map(r => r.normalizedData?.employeeNumber).filter(Boolean))];
+  const namesToSearch = [...new Set(batchRows.map(r => r.normalizedData?.fullName).filter(Boolean))];
+
+  if (idsToSearch.length === 0 && namesToSearch.length === 0) return { ids: new Set(), names: new Set() };
+
+  // For very large batches, we might need chunking, but standard imports are < 500 rows.
+  const employees = await EmployeeModel.findByIdsOrNames(idsToSearch, namesToSearch);
   const ids = new Set();
   const names = new Set();
 
@@ -306,7 +312,7 @@ export const EmployeeImportService = {
 
     const duplicateKeys = new Set([...idCounts.entries()].filter(([, count]) => count > 1).map(([id]) => id));
     const duplicateNames = new Set([...nameCounts.entries()].filter(([, count]) => count > 1).map(([name]) => name));
-    const { ids: existingIds, names: existingNames } = await loadExistingEmployees();
+    const { ids: existingIds, names: existingNames } = await loadExistingEmployees(normalizedRows);
     const stagedRows = normalizedRows.map((row) => {
       const issues = validateRecord(row.normalizedData, duplicateKeys, existingIds, duplicateNames, existingNames);
       return {
@@ -367,7 +373,7 @@ export const EmployeeImportService = {
       throw new AppError('Unsupported duplicate resolution action', 400);
     }
 
-    const { ids: existingIds, names: existingNames } = await loadExistingEmployees();
+    const { ids: existingIds, names: existingNames } = await loadExistingEmployees([{ normalizedData }]);
     const batchRows = await EmployeeImportModel.findAll({ importBatchId });
     const groupIds = new Set(rows.map((groupRow) => groupRow.id));
     const keptNameKey = normalizeName(normalizedData.fullName);
@@ -427,7 +433,7 @@ export const EmployeeImportService = {
     const candidateNameKey = normalizeName(candidate.fullName);
     const duplicateNames = batchNameDuplicateSet(candidateNameKey, batchRows, id);
 
-    const { ids: existingIds, names: existingNames } = await loadExistingEmployees();
+    const { ids: existingIds, names: existingNames } = await loadExistingEmployees([{ normalizedData: candidate }]);
     const issues = validateRecord(candidate, duplicateKeys, existingIds, duplicateNames, existingNames);
     const updated = await EmployeeImportModel.update(id, {
       ...row,
@@ -591,19 +597,32 @@ export const EmployeeImportService = {
     const readyRows = (await EmployeeImportModel.findAll({ importBatchId, status: 'ready' })).sort((a, b) => a.sourceRow - b.sourceRow);
     const results = { imported: 0, failed: 0, failures: [], departmentsCreated: createdDepartments.length };
 
-    for (const row of readyRows) {
+    if (readyRows.length > 0) {
       try {
-        await EmployeeModel.create(row.normalizedData);
-        await EmployeeImportModel.remove(row.id);
-        results.imported += 1;
-      } catch (error) {
-        await EmployeeImportModel.update(row.id, {
-          ...row,
-          status: 'issue',
-          issues: [...row.issues, { code: 'database_error', message: error.message || 'Unable to import row' }],
-        });
-        results.failed += 1;
-        results.failures.push({ id: row.id, sourceRow: row.sourceRow, message: error.message });
+        const dataToInsert = readyRows.map(row => row.normalizedData);
+        await EmployeeModel.insertMany(dataToInsert);
+        
+        const rowIds = readyRows.map(row => row.id);
+        await EmployeeImportModel.removeByIds(rowIds);
+        
+        results.imported += readyRows.length;
+      } catch (bulkError) {
+        // Fallback: Sequential insert to isolate failures if bulk insert fails
+        for (const row of readyRows) {
+          try {
+            await EmployeeModel.create(row.normalizedData);
+            await EmployeeImportModel.remove(row.id);
+            results.imported += 1;
+          } catch (error) {
+            await EmployeeImportModel.update(row.id, {
+              ...row,
+              status: 'issue',
+              issues: [...row.issues, { code: 'database_error', message: error.message || 'Unable to import row' }],
+            });
+            results.failed += 1;
+            results.failures.push({ id: row.id, sourceRow: row.sourceRow, message: error.message });
+          }
+        }
       }
     }
 

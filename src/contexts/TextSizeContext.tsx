@@ -61,10 +61,11 @@ export function TextSizeProvider({ children }: { children: React.ReactNode }) {
     } catch {}
   }, [textSize, storageKey]);
 
-  const setTextSize = (size: TextSize) => setTextSizeState(size);
+  const setTextSize = React.useCallback((size: TextSize) => setTextSizeState(size), []);
+  const value = React.useMemo(() => ({ textSize, setTextSize }), [textSize, setTextSize]);
 
   return (
-    <TextSizeContext.Provider value={{ textSize, setTextSize }}>
+    <TextSizeContext.Provider value={value}>
       {children}
     </TextSizeContext.Provider>
   );

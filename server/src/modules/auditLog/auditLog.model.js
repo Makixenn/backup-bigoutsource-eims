@@ -57,20 +57,16 @@ async function enrichWithProfileName(log, cache = new Map()) {
 
   const cacheKey = log.userId ? `id:${log.userId}` : `email:${log.userEmail}`;
   if (!cache.has(cacheKey)) {
-    let profile = null;
-
-    if (log.userId) {
-      profile = await UserProfileModel.findById(log.userId).catch(() => null);
-    }
-
-    if (!profile && log.userEmail) {
-      profile = await UserProfileModel.findByEmail(log.userEmail).catch(() => null);
-    }
-
-    cache.set(cacheKey, profile?.fullName || '');
+    const fetchProfile = async () => {
+      let profile = null;
+      if (log.userId) profile = await UserProfileModel.findById(log.userId).catch(() => null);
+      if (!profile && log.userEmail) profile = await UserProfileModel.findByEmail(log.userEmail).catch(() => null);
+      return profile?.fullName || '';
+    };
+    cache.set(cacheKey, fetchProfile());
   }
 
-  const fullName = cache.get(cacheKey);
+  const fullName = await cache.get(cacheKey);
   return fullName ? { ...log, userName: fullName } : log;
 }
 
@@ -120,29 +116,17 @@ export const AuditLogModel = {
 
     if (filters.entityType) searchParams.entity_type = `eq.${filters.entityType}`;
     if (filters.entityId) searchParams.entity_id = `eq.${filters.entityId}`;
+    if (filters.action) searchParams.action = `ilike.*${filters.action}*`;
+    if (filters.userEmail) searchParams.user_email = `ilike.*${filters.userEmail}*`;
+    if (filters.search) {
+      searchParams.or = `action.ilike.*${filters.search}*,entity_type.ilike.*${filters.search}*,user_email.ilike.*${filters.search}*,user_name.ilike.*${filters.search}*,user_role.ilike.*${filters.search}*,entity_label.ilike.*${filters.search}*,user_agent.ilike.*${filters.search}*`;
+    }
 
     const rows = await supabaseRequest('audit_logs', { searchParams });
     const profileCache = new Map();
     const logs = await Promise.all(rows.map((row) => enrichWithProfileName(normalize(row), profileCache)));
 
-    return logs
-      .filter((log) => !filters.entityType || log.entityType === filters.entityType)
-      .filter((log) => !filters.entityId || log.entityId === filters.entityId)
-      .filter((log) => !filters.action || matchesText(log.action, filters.action))
-      .filter((log) => !filters.userEmail || matchesText(log.userEmail, filters.userEmail))
-      .filter(
-        (log) =>
-          !filters.search ||
-          matchesText(log.action, filters.search) ||
-          matchesText(log.entityType, filters.search) ||
-          matchesText(log.userEmail, filters.search) ||
-          matchesText(log.userName, filters.search) ||
-          matchesText(log.userRole, filters.search) ||
-          matchesText(log.entityLabel, filters.search) ||
-          matchesText(log.userAgent, filters.search) ||
-          matchesText(JSON.stringify(log.details), filters.search)
-      )
-      .slice(0, limit);
+    return logs.slice(0, limit);
   },
 
   async findById(id) {
