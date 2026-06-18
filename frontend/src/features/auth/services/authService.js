@@ -1,4 +1,4 @@
-import { apiRequest, clearAuthToken, setAuthToken } from './api';
+import { apiRequest, clearAuthToken, setAuthToken } from '@/src/services/api';
 
 export const authService = {
   internalDepartments() {

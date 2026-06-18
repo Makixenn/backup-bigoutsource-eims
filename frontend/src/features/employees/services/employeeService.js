@@ -1,4 +1,4 @@
-import { apiRequest } from './api';
+import { apiRequest } from '@/src/services/api';
 
 export const employeeService = {
   list: () => apiRequest('/employees'),
