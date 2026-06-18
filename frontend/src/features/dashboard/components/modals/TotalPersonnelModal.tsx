@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Users, Search, Download, Filter } from 'lucide-react';
 import { BaseDashboardModal } from './BaseDashboardModal';
-import { CustomSelect } from '@/src/common/components/CustomSelect';
+import { CustomSelect } from '@/src/components/CustomSelect';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts';
 
 interface TotalPersonnelModalProps {

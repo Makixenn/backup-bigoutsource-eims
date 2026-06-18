@@ -2,7 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useState } fr
 import { AppUser } from '../types';
 import toast from 'react-hot-toast';
 import { authService } from '@/src/features/auth/services/authService';
-import { clearAuthToken, getAuthToken } from '@/src/services/api';
+import { clearAuthToken, getAuthToken } from '@/src/lib/api';
 import { connectAccessSocket } from '@/src/services/realtimeService';
 import { userCan, type Capability } from '@/src/lib/permissions';
 

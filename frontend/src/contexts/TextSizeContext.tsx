@@ -5,7 +5,7 @@ const BASE_STORAGE_KEY = 'eims_text_size';
 
 export type TextSize = 'small' | 'medium' | 'large';
 
-export const TEXT_SIZES: TextSize[] = ['small', 'medium', 'large'];
+const TEXT_SIZES: TextSize[] = ['small', 'medium', 'large'];
 
 // Root font-size per level. All rem-based Tailwind sizes scale from this, so the
 // whole UI grows proportionally (text + row heights together), avoiding overflow

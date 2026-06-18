@@ -1,8 +1,8 @@
 import { supabaseAuth } from '../config/supabase.js';
-import { UserProfileModel } from '../modules/userProfile/userProfile.model.js';
+import { UserProfileModel } from '../models/userProfile.model.js';
 import { AppError } from '../utils/apiResponse.js';
 import { userHasCapability, userHasAnyCapability } from '../config/capabilities.js';
-import { RoleService } from '../modules/role/role.service.js';
+import { RoleService } from '../services/role.service.js';
 
 export async function authenticate(req, res, next) {
   try {
@@ -45,15 +45,7 @@ export async function authenticate(req, res, next) {
   }
 }
 
-export function requireRole(roles) {
-  const allowedRoles = Array.isArray(roles) ? roles : [roles];
 
-  return (req, res, next) => {
-    if (!req.user) return next(new AppError('Authentication required', 401));
-    if (!allowedRoles.includes(req.user.role)) return next(new AppError('You do not have permission to perform this action', 403));
-    return next();
-  };
-}
 
 /** Require a single capability. */
 export function requirePermission(capability) {

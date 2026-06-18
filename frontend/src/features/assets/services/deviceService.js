@@ -1,4 +1,4 @@
-import { apiRequest } from '@/src/services/api';
+import { apiRequest } from '@/src/lib/api';
 
 export const deviceService = {
   list: () => apiRequest('/devices'),

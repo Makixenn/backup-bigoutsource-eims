@@ -1,4 +1,4 @@
-import { apiRequest } from '@/src/services/api';
+import { apiRequest } from '@/src/lib/api';
 
 function toQuery(params = {}) {
   const query = new URLSearchParams();

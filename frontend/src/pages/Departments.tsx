@@ -17,8 +17,8 @@ import {
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'motion/react';
-import { PageLayout } from '@/src/common/components/layout/PageLayout';
-import { SkeletonLoadingMessage } from '@/src/common/components/SkeletonLoadingMessage';
+import { PageLayout } from '@/src/components/layout/PageLayout';
+import { SkeletonLoadingMessage } from '@/src/components/SkeletonLoadingMessage';
 import { useAuth } from '@/src/contexts/AuthContext';
 import { cn } from '@/src/lib/utils';
 import { accountService } from '@/src/services/accountService';

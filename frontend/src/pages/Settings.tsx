@@ -16,8 +16,8 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import toast from 'react-hot-toast';
-import { PageLayout } from '@/src/common/components/layout/PageLayout';
-import { SkeletonLoadingMessage } from '@/src/common/components/SkeletonLoadingMessage';
+import { PageLayout } from '@/src/components/layout/PageLayout';
+import { SkeletonLoadingMessage } from '@/src/components/SkeletonLoadingMessage';
 import { useAuth } from '@/src/contexts/AuthContext';
 import { useTheme } from '@/src/contexts/ThemeContext';
 import { useTextSize, type TextSize } from '@/src/contexts/TextSizeContext';

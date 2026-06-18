@@ -1,5 +1,5 @@
 export type UserRole = 'super_admin' | 'admin' | 'hr_admin' | 'it_admin' | 'viewer';
-export type EmployeeStatus = 'active' | 'inactive';
+type EmployeeStatus = 'active' | 'inactive';
 
 export interface Employee {
   id: string;
@@ -37,7 +37,7 @@ export interface AppUser {
   capabilityOverrides?: string[] | null;
 }
 
-export interface AuditLog {
+interface AuditLog {
   id: string;
   timestamp: string;
   uid: string;

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { TrendingUp, Filter } from 'lucide-react';
 import { BaseDashboardModal } from './BaseDashboardModal';
-import { CustomSelect } from '@/src/common/components/CustomSelect';
+import { CustomSelect } from '@/src/components/CustomSelect';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer , Legend } from 'recharts';
 
 interface WorkforceGrowthModalProps {

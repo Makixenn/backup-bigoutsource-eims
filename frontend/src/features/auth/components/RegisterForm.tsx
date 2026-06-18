@@ -5,7 +5,7 @@ import { useAuth } from '@/src/contexts/AuthContext';
 import { authService } from '@/src/features/auth/services/authService';
 import { roleService, type Role } from '@/src/features/settings/services/roleService';
 import { AppUser, UserRole } from '@/src/types';
-import logoUrl from '@/src/public/logo-only-bigoutsource.svg';
+import logoUrl from '/logo-only-bigoutsource.svg';
 import { AuthInput, PasswordInput, SelectInput } from './authFields';
 
 type RegistrationStep = 0 | 1 | 2;

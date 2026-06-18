@@ -4,7 +4,7 @@ import { Clock, Mail, ShieldX } from 'lucide-react';
 import { useTheme } from '@/src/contexts/ThemeContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
-import logoUrl from '@/src/public/logo-only-bigoutsource.svg';
+import logoUrl from '/logo-only-bigoutsource.svg';
 import { AuthInput, PasswordInput } from '@/src/features/auth/components/authFields';
 
 export default function Login() {

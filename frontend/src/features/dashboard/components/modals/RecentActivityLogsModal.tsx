@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Clock, Search, Download, Filter } from 'lucide-react';
 import { useDebounce } from '@/src/hooks/useDebounce';
 import { BaseDashboardModal } from './BaseDashboardModal';
-import { CustomSelect } from '@/src/common/components/CustomSelect';
+import { CustomSelect } from '@/src/components/CustomSelect';
 
 interface RecentActivityLogsModalProps {
   isOpen: boolean;

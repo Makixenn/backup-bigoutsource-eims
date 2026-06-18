@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import toast from 'react-hot-toast';
-import { PageLayout } from '@/src/common/components/layout/PageLayout';
+import { PageLayout } from '@/src/components/layout/PageLayout';
 import { cn } from '@/src/lib/utils';
 import { employeeImportService } from '@/src/features/imports/services/employeeImportService';
 import { accountService } from '@/src/services/accountService';

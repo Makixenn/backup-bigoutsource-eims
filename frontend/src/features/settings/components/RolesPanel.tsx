@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import toast from 'react-hot-toast';
 import { Check, Loader2, Lock, Pencil, Plus, ShieldCheck, Trash2, X } from 'lucide-react';
 import { roleService, type CapabilityItem, type Role } from '@/src/features/settings/services/roleService';
-import { SkeletonLoadingMessage } from '@/src/common/components/SkeletonLoadingMessage';
+import { SkeletonLoadingMessage } from '@/src/components/SkeletonLoadingMessage';
 import { CapabilityChecklist } from '@/src/features/settings/components/CapabilityChecklist';
 
 type RoleDraft = {
