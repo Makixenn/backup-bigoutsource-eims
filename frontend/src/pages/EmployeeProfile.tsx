@@ -138,7 +138,7 @@ function formatStatus(value: string) {
   return value === 'active' ? 'Active' : 'Inactive';
 }
 
-const KNOWN_SUFFIXES = new Set(['jr', 'jr.', 'sr', 'sr.', 'ii', 'iii', 'iv', 'v', 'md', 'm.d.', 'phd', 'ph.d.', 'esq', 'esq.']);
+const KNOWN_SUFFIXES = new Set(['jr', 'jr.', 'sr', 'sr.', 'i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii', 'ix', 'x', 'md', 'm.d.', 'phd', 'ph.d.', 'esq', 'esq.']);
 
 function parseEmployeeName(fullName = '') {
   const name = String(fullName || '').trim();

@@ -13,21 +13,21 @@ export function GlobalNotifications() {
     enabled: !!user?.uid,
     onChange: (payload) => {
       const log = payload.new;
-      if (!log || log.actor_id === user?.uid) return; // Don't notify self
+      if (!log || log.user_id === user?.uid || !log.action) return; // Don't notify self, and ensure action exists
 
       // Format notification text based on action
-      const actionName = log.action.replace(/\./g, ' ').toUpperCase();
+      const actionName = String(log.action).replace(/\./g, ' ').toUpperCase();
       
-      let message = `${log.actor_name || 'Someone'} performed: ${actionName}`;
+      let message = `${log.user_name || 'Someone'} performed: ${actionName}`;
       
       if (log.action === 'employee.created') {
-        message = `${log.actor_name || 'Someone'} added a new employee.`;
+        message = `${log.user_name || 'Someone'} added a new employee.`;
         toast.success(message, { icon: '👤' });
       } else if (log.action === 'account.disabled') {
-        message = `${log.actor_name || 'Someone'} disabled an account.`;
+        message = `${log.user_name || 'Someone'} disabled an account.`;
         toast.error(message, { icon: '🚫' });
       } else if (log.action === 'employee.archived') {
-        message = `${log.actor_name || 'Someone'} archived an employee.`;
+        message = `${log.user_name || 'Someone'} archived an employee.`;
         toast.error(message, { icon: '📦' });
       } else if (log.action.includes('created') || log.action.includes('added')) {
         toast.success(message);
