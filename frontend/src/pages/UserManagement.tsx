@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
 import type React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, Check, CheckCircle2, ChevronRight, Loader2, Pencil, Search, ShieldCheck, SlidersHorizontal, Trash2, UserPlus, UserX, UsersRound, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { PageLayout } from '@/src/components/layout/PageLayout';
@@ -14,6 +15,8 @@ import RegisterForm from '@/src/features/auth/components/RegisterForm';
 import { roleService, type CapabilityItem, type Role } from '@/src/features/settings/services/roleService';
 import { RolesPanel } from '@/src/features/settings/components/RolesPanel';
 import { CapabilityChecklist } from '@/src/features/settings/components/CapabilityChecklist';
+import { useRealtimeSubscription } from '@/src/hooks/useRealtimeSubscription';
+import { useUsersQuery } from '@/src/hooks/queries';
 
 const EDITABLE_ACCOUNT_STATUSES = [
   { value: 'active' as const, label: 'Active' },
@@ -91,6 +94,7 @@ function getInitials(name: string, email: string) {
 }
 
 export default function UserManagement() {
+  const navigate = useNavigate();
   const [users, setUsers] = useState<AppUser[]>([]);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
@@ -107,6 +111,7 @@ export default function UserManagement() {
   const [siteOptions, setSiteOptions] = useState<string[]>([]);
   const [disableUser, setDisableUser] = useState<AppUser | null>(null);
   const [enableUser, setEnableUser] = useState<AppUser | null>(null);
+  const [showMissingDepartmentModal, setShowMissingDepartmentModal] = useState(false);
   const [deleteUser, setDeleteUser] = useState<AppUser | null>(null);
   const [deleteInput, setDeleteInput] = useState('');
   const [showRegister, setShowRegister] = useState(false);
@@ -115,21 +120,19 @@ export default function UserManagement() {
   const [permsTarget, setPermsTarget] = useState<AppUser | null>(null);
   const [permsDraft, setPermsDraft] = useState<string[]>([]);
   const [permsSaving, setPermsSaving] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  async function loadUsers() {
-    setIsLoading(true);
-    try {
-      setUsers(asArray(await userService.list()));
-    } catch (error: any) {
-      toast.error(error.message || 'Unable to load users');
-    } finally {
-      setIsLoading(false);
-    }
-  }
+  const { data: fetchedUsers = [], isLoading: isUsersLoading } = useUsersQuery(refreshTrigger);
+
+  useRealtimeSubscription({
+    table: 'user_profiles',
+    onChange: () => setRefreshTrigger(prev => prev + 1)
+  });
 
   useEffect(() => {
-    loadUsers();
-  }, []);
+    setUsers(fetchedUsers);
+    setIsLoading(isUsersLoading);
+  }, [fetchedUsers, isUsersLoading]);
 
   useEffect(() => {
     function syncRefreshedAccounts(event: Event) {
@@ -242,12 +245,18 @@ export default function UserManagement() {
 
   const confirmDisableUser = async (id: string) => {
     setBusyId(id);
+    const prevUsers = [...users];
+    
+    // Optimistic update
+    setUsers(users.map(u => u.uid === id ? { ...u, status: 'disabled' } : u));
+    setDisableUser(null);
+
     try {
       await userService.disable(id);
       toast.success('User disabled');
-      setDisableUser(null);
-      await loadUsers();
+      // No need to loadUsers() here as we have realtime subscriptions catching updates
     } catch (error: any) {
+      setUsers(prevUsers); // Rollback
       toast.error(error.message || 'Unable to disable user');
     } finally {
       setBusyId(null);
@@ -256,12 +265,17 @@ export default function UserManagement() {
 
   const enableUserAccount = async (id: string) => {
     setBusyId(id);
+    const prevUsers = [...users];
+    
+    // Optimistic update
+    setUsers(users.map(u => u.uid === id ? { ...u, status: 'active' } : u));
+    setEnableUser(null);
+
     try {
       await userService.update(id, { status: 'active' });
       toast.success('User enabled');
-      setEnableUser(null);
-      await loadUsers();
     } catch (error: any) {
+      setUsers(prevUsers); // Rollback
       toast.error(error.message || 'Unable to enable user');
     } finally {
       setBusyId(null);
@@ -272,14 +286,21 @@ export default function UserManagement() {
     if (!deleteUser) return;
 
     setBusyId(deleteUser.uid);
+    const prevUsers = [...users];
+    
+    // Optimistic update
+    setUsers(users.filter(u => u.uid !== deleteUser.uid));
+    const targetId = deleteUser.uid;
+    
+    if (editingId === targetId) cancelEditing();
+    if (disableUser?.uid === targetId) setDisableUser(null);
+    setDeleteUser(null);
+
     try {
-      await userService.remove(deleteUser.uid);
+      await userService.remove(targetId);
       toast.success('User deleted');
-      setDeleteUser(null);
-      if (editingId === deleteUser.uid) cancelEditing();
-      if (disableUser?.uid === deleteUser.uid) setDisableUser(null);
-      await loadUsers();
     } catch (error: any) {
+      setUsers(prevUsers); // Rollback
       toast.error(error.message || 'Unable to delete user');
     } finally {
       setBusyId(null);
@@ -311,6 +332,18 @@ export default function UserManagement() {
     }
 
     setBusyId(id);
+    const prevUsers = [...users];
+    
+    // Optimistic update
+    setUsers(users.map(u => u.uid === id ? { 
+      ...u, 
+      department: editDraft.department.trim(),
+      site: editDraft.site.trim(),
+      role: editDraft.role,
+      status: editDraft.status
+    } : u));
+    cancelEditing();
+
     try {
       await userService.update(id, {
         department: editDraft.department.trim(),
@@ -319,9 +352,8 @@ export default function UserManagement() {
         status: editDraft.status,
       });
       toast.success('User updated');
-      cancelEditing();
-      await loadUsers();
     } catch (error: any) {
+      setUsers(prevUsers); // Rollback
       toast.error(error.message || 'Unable to update user');
     } finally {
       setBusyId(null);
@@ -368,7 +400,7 @@ export default function UserManagement() {
       await userService.setCapabilities(permsTarget.uid, reset ? null : permsDraft);
       toast.success(reset ? 'Reverted to role defaults' : 'Permissions updated');
       setPermsTarget(null);
-      await loadUsers();
+      setRefreshTrigger((prev) => prev + 1);
     } catch (error: any) {
       toast.error(error.message || 'Unable to update permissions');
     } finally {
@@ -380,25 +412,39 @@ export default function UserManagement() {
     <PageLayout title="System Permissions & Users" contentClassName="w-full max-w-[1600px] mx-auto">
       <div className="flex flex-col gap-6 w-full">
         <div className="inline-flex w-fit items-center gap-1 rounded-xl border p-1" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}>
-          {(['users', 'roles'] as const).map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              onClick={() => setView(tab)}
-              className="min-h-10 rounded-lg px-4 py-2 text-sm font-bold transition-colors"
-              style={view === tab
-                ? { backgroundColor: 'var(--color-accent)', color: 'var(--color-surface)' }
-                : { color: 'var(--color-text-muted)' }}
-            >
-              {tab === 'users' ? 'Users' : 'Roles & Permissions'}
-            </button>
-          ))}
+          {(['users', 'roles'] as const).map((tab) => {
+            const isActive = view === tab;
+            return (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setView(tab)}
+                className="relative min-h-10 rounded-lg px-4 py-2 text-sm font-bold transition-colors"
+                style={{ color: isActive ? 'var(--color-surface)' : 'var(--color-text-muted)' }}
+              >
+                {isActive && (
+                  <motion.div
+                    layoutId="activeUserMgmtTabPill"
+                    className="absolute inset-0 rounded-lg"
+                    style={{ backgroundColor: 'var(--color-accent)' }}
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                  />
+                )}
+                <span className="relative z-10">
+                  {tab === 'users' ? 'Users' : 'Roles & Permissions'}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
-        {view === 'roles' ? (
-          <RolesPanel />
-        ) : (
-        <>
+        <AnimatePresence mode="wait">
+          {view === 'roles' ? (
+            <motion.div key="roles" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2, ease: "easeOut" }} className="flex flex-col gap-6 w-full">
+              <RolesPanel />
+            </motion.div>
+          ) : (
+          <motion.div key="users" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.2, ease: "easeOut" }} className="flex flex-col gap-6 w-full">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2 flex-1 min-w-[300px]">
             <div className="relative flex-1">
@@ -437,7 +483,16 @@ export default function UserManagement() {
           </div>
           <button
             type="button"
-            onClick={() => setShowRegister(true)}
+            onClick={() => {
+              const validDepartments = departmentOptions.filter(d => Boolean(d && String(d).trim()));
+              if (validDepartments.length === 0) {
+                setShowMissingDepartmentModal(true);
+                setShowRegister(false);
+              } else {
+                setShowRegister(true);
+                setShowMissingDepartmentModal(false);
+              }
+            }}
             className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[#111827] px-5 py-2.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#374151] active:scale-[0.98]"
           >
             <UserPlus className="h-4 w-4" />
@@ -792,8 +847,9 @@ export default function UserManagement() {
             </motion.div>
           )}
         </AnimatePresence>
-        </>
-        )}
+          </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       <AnimatePresence>
@@ -1124,7 +1180,7 @@ export default function UserManagement() {
                   } catch (error: any) {
                     toast.error(error?.message || 'Account created, but activation failed — approve it manually.');
                   }
-                  await loadUsers();
+                  setRefreshTrigger((prev) => prev + 1);
                 }}
               />
             </motion.div>
@@ -1197,6 +1253,49 @@ export default function UserManagement() {
                   >
                     {permsSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                     Save
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence mode="wait">
+        {showMissingDepartmentModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-[#111827]/40 p-4 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl"
+            >
+              <div className="border-b border-[#E5E7EB] px-6 py-4">
+                <h2 className="text-lg font-black text-[#111827]">Add Department First</h2>
+              </div>
+              <div className="p-6">
+                <p className="text-sm text-[#4B5563]">
+                  You must add at least one department before you can register a new user account.
+                </p>
+                <div className="mt-6 flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowMissingDepartmentModal(false)}
+                    className="rounded-xl border border-[#D1D5DB] bg-white px-4 py-2.5 text-sm font-bold text-[#4B5563] transition-all hover:bg-[#F9FAFB] hover:text-[#111827]"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/departments')}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#111827] px-6 py-2.5 text-sm font-black text-white shadow-lg shadow-[#11182720] transition-all hover:bg-[#374151]"
+                  >
+                    Go to Departments
                   </button>
                 </div>
               </div>
