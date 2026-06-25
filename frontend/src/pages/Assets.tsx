@@ -399,7 +399,7 @@ export default function Assets() {
         {/* Asset Allocation Chart */}
         {!isLoading && allDevices.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white p-6 rounded-2xl border border-[#E5E7EB] shadow-sm w-full lg:w-1/2">
-            <h3 className="text-lg font-bold text-[#111827] mb-6 flex items-center gap-2">
+            <h3 className="text-lg font-bold text-[#111827] mb-6 flex items-center justify-center gap-2">
               <Laptop className="w-5 h-5 text-[#9CA3AF]" />
               Asset Allocation
             </h3>
