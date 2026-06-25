@@ -16,7 +16,8 @@ import { roleService, type CapabilityItem, type Role } from '@/src/features/sett
 import { RolesPanel } from '@/src/features/settings/components/RolesPanel';
 import { CapabilityChecklist } from '@/src/features/settings/components/CapabilityChecklist';
 import { useRealtimeSubscription } from '@/src/hooks/useRealtimeSubscription';
-import { useUsersQuery } from '@/src/hooks/queries';
+import { useUsersQuery, useRolesQuery, useCapabilityCatalogQuery } from '@/src/hooks/queries';
+import { useQueryClient } from '@tanstack/react-query';
 
 const EDITABLE_ACCOUNT_STATUSES = [
   { value: 'active' as const, label: 'Active' },
@@ -94,6 +95,7 @@ function getInitials(name: string, email: string) {
 }
 
 export default function UserManagement() {
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [users, setUsers] = useState<AppUser[]>([]);
   const [search, setSearch] = useState('');
@@ -107,7 +109,6 @@ export default function UserManagement() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState<UserEditDraft | null>(null);
   const [departmentOptions, setDepartmentOptions] = useState<string[]>([]);
-  const [roles, setRoles] = useState<Role[]>([]);
   const [siteOptions, setSiteOptions] = useState<string[]>([]);
   const [disableUser, setDisableUser] = useState<AppUser | null>(null);
   const [enableUser, setEnableUser] = useState<AppUser | null>(null);
@@ -116,17 +117,17 @@ export default function UserManagement() {
   const [deleteInput, setDeleteInput] = useState('');
   const [showRegister, setShowRegister] = useState(false);
   const [view, setView] = useState<'users' | 'roles'>('users');
-  const [capabilityCatalog, setCapabilityCatalog] = useState<CapabilityItem[]>([]);
   const [permsTarget, setPermsTarget] = useState<AppUser | null>(null);
   const [permsDraft, setPermsDraft] = useState<string[]>([]);
   const [permsSaving, setPermsSaving] = useState(false);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  const { data: fetchedUsers = [], isLoading: isUsersLoading } = useUsersQuery(refreshTrigger);
+  const { data: roles = [] } = useRolesQuery();
+  const { data: capabilityCatalog = [] } = useCapabilityCatalogQuery();
+  const { data: fetchedUsers = [], isLoading: isUsersLoading } = useUsersQuery();
 
   useRealtimeSubscription({
     table: 'user_profiles',
-    onChange: () => setRefreshTrigger(prev => prev + 1)
+    onChange: () => queryClient.invalidateQueries({ queryKey: ['users'] })
   });
 
   useEffect(() => {
@@ -135,34 +136,26 @@ export default function UserManagement() {
   }, [fetchedUsers, isUsersLoading]);
 
   useEffect(() => {
-    function syncRefreshedAccounts(event: Event) {
-      const accountList = (event as CustomEvent<{ users?: AppUser[] }>).detail?.users;
-      if (Array.isArray(accountList)) {
-        setUsers(accountList);
-        setIsLoading(false);
-      }
+    function syncRefreshedAccounts() {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
     }
 
     window.addEventListener(USER_ACCOUNTS_REFRESHED_EVENT, syncRefreshedAccounts);
     return () => window.removeEventListener(USER_ACCOUNTS_REFRESHED_EVENT, syncRefreshedAccounts);
-  }, []);
+  }, [queryClient]);
 
   useEffect(() => {
     let isMounted = true;
 
     async function loadOptions() {
       try {
-        const [departments, sites, roleList, catalog] = await Promise.all([
+        const [departments, sites] = await Promise.all([
           authService.internalDepartments(),
           siteService.list(),
-          roleService.list(),
-          roleService.capabilities(),
         ]);
 
         if (!isMounted) return;
 
-        setRoles(asArray(roleList));
-        setCapabilityCatalog(asArray(catalog));
         setDepartmentOptions(asArray(departments).map((name) => String(name).trim()).filter(Boolean));
         const names = normalizeSiteNames(sites);
         setSiteOptions(names.length ? names : ['HQ', 'Candelaria', 'WFH', 'Hybrid']);
@@ -382,6 +375,11 @@ export default function UserManagement() {
     return map;
   }, [roles]);
 
+  const getRoleName = (slug: string) => {
+    const role = roles.find(r => r.slug === slug);
+    return role ? role.name : roleLabel(slug);
+  };
+
   const openPermissions = (account: AppUser) => {
     const roleCaps = rolesBySlug.get(account.role)?.capabilities || [];
     const effective = Array.isArray(account.capabilityOverrides) ? account.capabilityOverrides : roleCaps;
@@ -400,7 +398,7 @@ export default function UserManagement() {
       await userService.setCapabilities(permsTarget.uid, reset ? null : permsDraft);
       toast.success(reset ? 'Reverted to role defaults' : 'Permissions updated');
       setPermsTarget(null);
-      await loadUsers();
+      queryClient.invalidateQueries({ queryKey: ['users'] });
     } catch (error: any) {
       toast.error(error.message || 'Unable to update permissions');
     } finally {
@@ -601,7 +599,7 @@ export default function UserManagement() {
                             ) : (
                               <motion.div key="view-role" initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} transition={{ duration: 0.15 }} className="flex items-center gap-2">
                                 <ShieldCheck className="w-4 h-4 text-[#D1D5DB]" />
-                                <span className="text-xs font-black text-[#4B5563] uppercase tracking-tight">{roleLabel(user.role)}</span>
+                                <span className="text-xs font-black text-[#4B5563] uppercase tracking-tight">{getRoleName(user.role)}</span>
                               </motion.div>
                             )}
                           </AnimatePresence>

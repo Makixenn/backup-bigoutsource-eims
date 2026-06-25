@@ -5,6 +5,8 @@ import { Check, Loader2, Lock, Pencil, Plus, ShieldCheck, Trash2, X } from 'luci
 import { roleService, type CapabilityItem, type Role } from '@/src/features/settings/services/roleService';
 import { SkeletonLoadingMessage } from '@/src/components/SkeletonLoadingMessage';
 import { CapabilityChecklist } from '@/src/features/settings/components/CapabilityChecklist';
+import { useRolesQuery, useCapabilityCatalogQuery } from '@/src/hooks/queries';
+import { useQueryClient } from '@tanstack/react-query';
 
 type RoleDraft = {
   slug?: string;
@@ -14,30 +16,15 @@ type RoleDraft = {
 };
 
 export function RolesPanel() {
-  const [roles, setRoles] = useState<Role[]>([]);
-  const [catalog, setCatalog] = useState<CapabilityItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const { data: roles = [], isLoading: isRolesLoading } = useRolesQuery();
+  const { data: catalog = [], isLoading: isCatalogLoading } = useCapabilityCatalogQuery();
+  const isLoading = isRolesLoading || isCatalogLoading;
+  
   const [draft, setDraft] = useState<RoleDraft | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Role | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [busy, setBusy] = useState(false);
-
-  async function load() {
-    setIsLoading(true);
-    try {
-      const [roleList, caps] = await Promise.all([roleService.list(), roleService.capabilities()]);
-      setRoles(Array.isArray(roleList) ? roleList : []);
-      setCatalog(Array.isArray(caps) ? caps : []);
-    } catch (error: any) {
-      toast.error(error.message || 'Unable to load roles');
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    load();
-  }, []);
 
   const openCreate = () => setDraft({ name: '', capabilities: [], locked: false });
   const openEdit = (role: Role) =>
@@ -73,7 +60,7 @@ export function RolesPanel() {
         toast.success('Role created');
       }
       setDraft(null);
-      await load();
+      queryClient.invalidateQueries({ queryKey: ['roles'] });
     } catch (error: any) {
       toast.error(error.message || 'Unable to save role');
     } finally {
@@ -88,7 +75,7 @@ export function RolesPanel() {
       await roleService.remove(deleteTarget.slug);
       toast.success('Role deleted');
       setDeleteTarget(null);
-      await load();
+      queryClient.invalidateQueries({ queryKey: ['roles'] });
     } catch (error: any) {
       toast.error(error.message || 'Unable to delete role');
     } finally {

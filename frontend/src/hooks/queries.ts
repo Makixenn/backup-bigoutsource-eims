@@ -51,3 +51,19 @@ export function useNotificationsQuery(params?: any) {
     queryFn: () => notificationService.list(params).then(asArray),
   });
 }
+
+import { roleService } from '../features/settings/services/roleService';
+
+export function useRolesQuery() {
+  return useQuery({
+    queryKey: ['roles'],
+    queryFn: () => roleService.list().then(asArray),
+  });
+}
+
+export function useCapabilityCatalogQuery() {
+  return useQuery({
+    queryKey: ['capabilities'],
+    queryFn: () => roleService.capabilities().then(asArray),
+  });
+}
