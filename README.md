@@ -101,3 +101,4 @@ In local development, the system will automatically seed a Super Admin account u
 - **Password:** `kamote123`
 
 *Note: Production environments do not use this fallback for security reasons.*
+
