@@ -215,7 +215,7 @@ export default function Settings() {
                 )}
                 <TabButton active={activeTab === 'password'} icon={Lock} label="Password" onClick={() => setActiveTab('password')} />
                 <div
-                  className="flex min-h-24 w-full items-center justify-between rounded-2xl border px-5"
+                  className="flex min-h-24 w-full items-center justify-between rounded-2xl border px-5 cursor-default"
                   style={{
                     borderColor: 'var(--color-border)',
                     backgroundColor: 'var(--color-surface)',
@@ -229,7 +229,7 @@ export default function Settings() {
                   <DarkModeToggle isDark={isDark} onToggle={toggleTheme} />
                 </div>
                 <div
-                  className="flex min-h-24 w-full items-center justify-between rounded-2xl border px-5"
+                  className="flex min-h-24 w-full items-center justify-between rounded-2xl border px-5 cursor-default"
                   style={{
                     borderColor: 'var(--color-border)',
                     backgroundColor: 'var(--color-surface)',
